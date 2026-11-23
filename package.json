@@ -1,0 +1,13 @@
+{
+  "name": "tx-limited-platform",
+  "version": "1.0.0",
+  "description": "TX Limited — Precision Agriculture, Mining Tech, AI & ML, and Biotech company website & API",
+  "type": "module",
+  "scripts": {
+    "start": "node backend/server.js",
+    "dev": "node --watch backend/server.js"
+  },
+  "dependencies": {
+    "pg": "^8.23.1"
+  }
+}

@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TX Limited — Operations &amp; Admin Console</title>
+  <meta name="description" content="TX Limited internal operations console for monitoring PostgreSQL telemetry, division status, and partnership inquiries." />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="index.css" />
+  <style>
+    .admin-main {
+      padding-block: clamp(2.5rem, 5vw, 4rem);
+    }
+    .admin-topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      flex-wrap: wrap;
+      gap: 1.5rem;
+      margin-bottom: 2.5rem;
+      padding-bottom: 1.5rem;
+      border-bottom: 1px solid var(--border-hairline);
+    }
+    .status-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1.25rem;
+      margin-bottom: 2.5rem;
+    }
+    .stat-card {
+      background-color: var(--bg-elevated);
+      border: 1px solid var(--border-hairline);
+      border-radius: var(--radius-md);
+      padding: 1.35rem;
+    }
+    .stat-card__label {
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--ink-muted);
+    }
+    .stat-card__val {
+      font-family: var(--font-display);
+      font-size: 1.65rem;
+      font-weight: 600;
+      margin-top: 0.4rem;
+      color: var(--ink-primary);
+    }
+    .admin-panels {
+      display: grid;
+      grid-template-columns: 1.35fr 0.65fr;
+      gap: 1.5rem;
+      align-items: start;
+    }
+    .panel-box {
+      background-color: var(--bg-elevated);
+      border: 1px solid var(--border-hairline);
+      border-radius: var(--radius-md);
+      padding: 1.5rem;
+      box-shadow: var(--shadow-subtle);
+    }
+    .panel-box__head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 1.25rem;
+      padding-bottom: 0.875rem;
+      border-bottom: 1px solid var(--border-hairline);
+    }
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.875rem;
+    }
+    .data-table th {
+      text-align: left;
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--ink-muted);
+      padding: 0.65rem 0.5rem;
+      border-bottom: 1px solid var(--border-strong);
+    }
+    .data-table td {
+      padding: 0.85rem 0.5rem;
+      border-bottom: 1px solid var(--border-hairline);
+      vertical-align: top;
+      color: var(--ink-secondary);
+    }
+    .data-table td strong {
+      color: var(--ink-primary);
+      font-weight: 500;
+    }
+    .badge-tag {
+      display: inline-block;
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      padding: 0.2rem 0.5rem;
+      border-radius: var(--radius-sm);
+      background-color: var(--accent-pine-soft);
+      color: var(--accent-pine);
+    }
+    .btn-sm {
+      padding: 0.35rem 0.7rem;
+      font-size: 0.78rem;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border-strong);
+      background: transparent;
+      cursor: pointer;
+    }
+    .btn-sm:hover {
+      background-color: var(--bg-secondary);
+      border-color: var(--ink-primary);
+    }
+    .telemetry-form {
+      display: grid;
+      gap: 0.875rem;
+      margin-top: 1.25rem;
+      padding-top: 1.25rem;
+      border-top: 1px solid var(--border-hairline);
+    }
+    @media (max-width: 1024px) {
+      .status-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      .admin-panels {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header class="site-header" id="site-header">
+    <div class="container header-inner">
+      <a href="index.html" class="brand-mark" aria-label="TX Limited Public Site">
+        <span class="brand-mark__emblem">TX</span>
+        <span>TX Limited</span>
+        <span class="brand-mark__sub">Admin Console</span>
+      </a>
+
+      <div class="header-actions">
+        <a href="index.html" class="btn btn--secondary" id="back-to-site-btn">&larr; Public Website</a>
+        <button class="btn btn--primary" id="refresh-admin-btn" type="button">Refresh Data</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="admin-main">
+    <div class="container">
+      <div class="admin-topbar">
+        <div>
+          <span class="eyebrow">Operations &amp; Database Console</span>
+          <h1 class="section-title" style="margin-top: 0.4rem;">TX Core Administration</h1>
+        </div>
+        <div id="admin-pg-badge" class="badge-tag">Checking PostgreSQL...</div>
+      </div>
+
+      <section class="status-grid" aria-label="System Metrics">
+        <div class="stat-card">
+          <div class="stat-card__label">Database Engine</div>
+          <div class="stat-card__val" id="stat-engine">—</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card__label">Active Divisions</div>
+          <div class="stat-card__val" id="stat-divisions">—</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card__label">Logged Inquiries</div>
+          <div class="stat-card__val" id="stat-inquiries">—</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card__label">Telemetry Readings</div>
+          <div class="stat-card__val" id="stat-telemetry">—</div>
+        </div>
+      </section>
+
+      <div class="admin-panels">
+        <!-- Inquiries Table -->
+        <section class="panel-box" aria-labelledby="inquiries-heading">
+          <div class="panel-box__head">
+            <h2 style="font-size: 1.25rem;" id="inquiries-heading">Partnership Inquiries</h2>
+            <select id="filter-division" aria-label="Filter inquiries by division" style="padding: 0.4rem 0.65rem; border: 1px solid var(--border-strong); border-radius: 4px; background: var(--bg-primary); font-size: 0.85rem;">
+              <option value="ALL">All Divisions</option>
+              <option value="Precision Agriculture">Precision Agriculture</option>
+              <option value="Mining Tech Solutions">Mining Tech Solutions</option>
+              <option value="AI & Machine Learning">AI &amp; Machine Learning</option>
+              <option value="Biotech Technology">Biotech Technology</option>
+              <option value="Cross-Domain Integration">Cross-Domain Integration</option>
+            </select>
+          </div>
+          <div style="overflow-x: auto;">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Contact</th>
+                  <th>Division</th>
+                  <th>Message</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="inquiries-tbody">
+                <tr><td colspan="5">Loading inquiries from PostgreSQL...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- Telemetry Logs & Quick Push -->
+        <section class="panel-box" aria-labelledby="telemetry-heading">
+          <div class="panel-box__head">
+            <h2 style="font-size: 1.25rem;" id="telemetry-heading">Field Telemetry</h2>
+          </div>
+          <div style="overflow-x: auto;">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Node</th>
+                  <th>Metric</th>
+                  <th>Value</th>
+                </tr>
+              </thead>
+              <tbody id="telemetry-tbody">
+                <tr><td colspan="3">Loading telemetry...</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <form class="telemetry-form" id="telemetry-form">
+            <div class="eyebrow">Log New Reading</div>
+            <div class="form-field">
+              <label for="tel-node">Node ID</label>
+              <input type="text" id="tel-node" placeholder="AG-09" required />
+            </div>
+            <div class="form-field">
+              <label for="tel-division">Division</label>
+              <select id="tel-division">
+                <option value="agriculture">agriculture</option>
+                <option value="mining">mining</option>
+                <option value="aiml">aiml</option>
+                <option value="biotech">biotech</option>
+              </select>
+            </div>
+            <div class="form-row">
+              <div class="form-field">
+                <label for="tel-metric">Metric</label>
+                <input type="text" id="tel-metric" placeholder="SOIL_MOISTURE" required />
+              </div>
+              <div class="form-field">
+                <label for="tel-value">Value</label>
+                <input type="text" id="tel-value" placeholder="41.8%" required />
+              </div>
+            </div>
+            <button type="submit" class="btn btn--primary" id="tel-submit-btn">Push to PostgreSQL</button>
+          </form>
+        </section>
+      </div>
+    </div>
+  </main>
+
+  <script src="admin.js"></script>
+</body>
+</html>
