@@ -262,6 +262,30 @@
           </form>
         </section>
       </div>
+
+      <!-- Registered Farms Table -->
+      <section class="panel-box" style="margin-top: 1.5rem;" aria-labelledby="farms-heading">
+        <div class="panel-box__head">
+          <h2 style="font-size: 1.25rem;" id="farms-heading">Registered Farms (Walk-Around GPS)</h2>
+          <span class="badge-tag" id="stat-farms-badge">0 Farms</span>
+        </div>
+        <div style="overflow-x: auto;">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Farmer</th>
+                <th>Farm &amp; Crop</th>
+                <th>Area &amp; GPS Points</th>
+                <th>Plan Tier</th>
+              </tr>
+            </thead>
+            <tbody id="farms-tbody">
+              <tr><td colspan="5">Loading registered farms...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
     </div>
   </main>
 

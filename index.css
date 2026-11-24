@@ -1015,6 +1015,171 @@ h1, h2, h3, h4 {
 }
 
 /* ==========================================================================
+   Precision Agriculture Farmer Hub (Walk-Around GPS & Live Insights)
+   ========================================================================== */
+.app-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+}
+
+.app-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.65rem 1.05rem;
+  background-color: #ffffff;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--ink-primary);
+  transition: border-color var(--transition-fast), background-color var(--transition-fast);
+}
+
+.app-badge:hover {
+  border-color: var(--accent-pine);
+  background-color: var(--bg-secondary);
+}
+
+.app-badge__sub {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  color: var(--ink-muted);
+  display: block;
+  line-height: 1.1;
+}
+
+.hub-grid {
+  display: grid;
+  grid-template-columns: 1.05fr 0.95fr;
+  gap: 2rem;
+  align-items: start;
+}
+
+.hub-card {
+  background-color: #ffffff;
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--radius-md);
+  padding: clamp(1.5rem, 3vw, 2.25rem);
+  box-shadow: var(--shadow-subtle);
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.walk-mapper {
+  background-color: #f4f2ea;
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--radius-sm);
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.walk-mapper__toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.walk-canvas {
+  width: 100%;
+  height: 210px;
+  background-color: #faf9f5;
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius-sm);
+  cursor: crosshair;
+  display: block;
+}
+
+.walk-coords-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--ink-secondary);
+}
+
+.insights-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+}
+
+.insight-tile {
+  background-color: #f4f2ea;
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--radius-sm);
+  padding: 1rem;
+}
+
+.insight-tile__label {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ink-muted);
+}
+
+.insight-tile__val {
+  font-family: var(--font-display);
+  font-size: 1.35rem;
+  font-weight: 600;
+  color: var(--ink-primary);
+  margin-top: 0.25rem;
+}
+
+.insight-tile__sub {
+  font-size: 0.8rem;
+  color: var(--ink-secondary);
+  margin-top: 0.2rem;
+}
+
+.plans-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+  margin-top: 2.5rem;
+}
+
+.plan-card {
+  background-color: #ffffff;
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--radius-md);
+  padding: 1.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.plan-card--featured {
+  border-color: var(--accent-pine);
+  border-top: 3px solid var(--accent-pine);
+  box-shadow: var(--shadow-subtle);
+}
+
+.plan-card__price {
+  font-family: var(--font-display);
+  font-size: 1.75rem;
+  font-weight: 600;
+}
+
+@media (max-width: 1024px) {
+  .hub-grid,
+  .plans-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ==========================================================================
    Footer (Light Mineral Linen)
    ========================================================================== */
 .site-footer {

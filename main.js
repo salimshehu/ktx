@@ -9,6 +9,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initMobileNav();
   initScrollReveal();
   initLiveTelemetryFeed();
+  initFarmerHub();
   initDivisionExplorer();
   initImpactEstimator();
   initDeploymentsFilter();
@@ -127,6 +128,227 @@ async function initLiveTelemetryFeed() {
   });
 
   await refreshFeed();
+}
+
+/* 4b. Precision Agriculture Farmer Hub (Walk-Around GPS + Live Insights) */
+async function initFarmerHub() {
+  const canvas = document.getElementById('walk-canvas');
+  const pointsCountEl = document.getElementById('walk-points-count');
+  const areaDisplayEl = document.getElementById('walk-area-display');
+  const simBtn = document.getElementById('btn-sim-walk');
+  const gpsBtn = document.getElementById('btn-device-gps');
+  const clearBtn = document.getElementById('btn-clear-walk');
+  const form = document.getElementById('farm-reg-form');
+  const feedback = document.getElementById('farm-reg-feedback');
+  const farmSelect = document.getElementById('registered-farm-select');
+
+  if (!canvas || !form || !farmSelect) return;
+  const ctx = canvas.getContext('2d');
+
+  // Store normalized points {x, y} on canvas and {lat, lng} GPS coordinates
+  let points = [];
+  const baseLat = 11.98;
+  const baseLng = 8.52;
+
+  function computeAreaHectares(pts) {
+    if (pts.length < 3) return 0;
+    // Shoelace formula on scaled meters (1 canvas px ~ 2.2m)
+    let area = 0;
+    for (let i = 0; i < pts.length; i++) {
+      const j = (i + 1) % pts.length;
+      area += pts[i].x * pts[j].y - pts[j].x * pts[i].y;
+    }
+    const sqMeters = Math.abs(area / 2) * (2.2 * 2.2);
+    return Number((sqMeters / 10000).toFixed(2));
+  }
+
+  function drawWalkCanvas() {
+    ctx.fillStyle = '#FAF9F5';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // Subtle field plot lines
+    ctx.strokeStyle = 'rgba(31, 74, 56, 0.08)';
+    ctx.lineWidth = 1;
+    for (let x = 40; x < canvas.width; x += 40) {
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, canvas.height);
+      ctx.stroke();
+    }
+    for (let y = 35; y < canvas.height; y += 35) {
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(canvas.width, y);
+      ctx.stroke();
+    }
+
+    if (points.length > 0) {
+      ctx.beginPath();
+      ctx.moveTo(points[0].x, points[0].y);
+      for (let i = 1; i < points.length; i++) {
+        ctx.lineTo(points[i].x, points[i].y);
+      }
+      if (points.length >= 3) {
+        ctx.closePath();
+        ctx.fillStyle = 'rgba(31, 74, 56, 0.14)';
+        ctx.fill();
+      }
+      ctx.strokeStyle = '#1F4A38';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      points.forEach((p, idx) => {
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 4.5, 0, Math.PI * 2);
+        ctx.fillStyle = idx === 0 ? '#B56734' : '#1F4A38';
+        ctx.fill();
+      });
+    }
+
+    const ha = computeAreaHectares(points);
+    pointsCountEl.textContent = `${points.length} boundary points`;
+    areaDisplayEl.textContent = `${ha.toFixed(2)} ha`;
+  }
+
+  function addPoint(x, y, latOverride, lngOverride) {
+    const lat = latOverride ?? Number((baseLat + (canvas.height - y) * 0.00004).toFixed(5));
+    const lng = lngOverride ?? Number((baseLng + x * 0.00004).toFixed(5));
+    points.push({ x, y, lat, lng });
+    drawWalkCanvas();
+  }
+
+  canvas.addEventListener('click', (e) => {
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    addPoint((e.clientX - rect.left) * scaleX, (e.clientY - rect.top) * scaleY);
+  });
+
+  simBtn?.addEventListener('click', () => {
+    points = [];
+    const cx = canvas.width / 2 + (Math.random() * 40 - 20);
+    const cy = canvas.height / 2 + (Math.random() * 20 - 10);
+    const rx = 120 + Math.random() * 40;
+    const ry = 65 + Math.random() * 20;
+    const vertices = 5;
+    for (let i = 0; i < vertices; i++) {
+      const angle = (i / vertices) * Math.PI * 2;
+      const jitter = 0.85 + Math.random() * 0.3;
+      addPoint(cx + Math.cos(angle) * rx * jitter, cy + Math.sin(angle) * ry * jitter);
+    }
+  });
+
+  gpsBtn?.addEventListener('click', () => {
+    if (!navigator.geolocation) {
+      simBtn?.click();
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const idx = points.length;
+        const x = 100 + (idx * 90) % 340;
+        const y = 60 + ((idx * 55) % 110);
+        addPoint(x, y, Number(pos.coords.latitude.toFixed(5)), Number(pos.coords.longitude.toFixed(5)));
+      },
+      () => simBtn?.click(),
+      { timeout: 3000 }
+    );
+  });
+
+  clearBtn?.addEventListener('click', () => {
+    points = [];
+    drawWalkCanvas();
+  });
+
+  drawWalkCanvas();
+
+  async function loadRegisteredFarms(selectId) {
+    try {
+      const res = await fetch(`${API_BASE}/farms`);
+      if (!res.ok) return;
+      const data = await res.json();
+      const farms = data.farms || [];
+      if (!farms.length) {
+        farmSelect.innerHTML = '<option value="">No farms registered yet</option>';
+        return;
+      }
+      farmSelect.innerHTML = farms
+        .map(
+          (f) =>
+            `<option value="${f.id}">${escapeHtml(f.farm_name)} (${escapeHtml(f.crop_type)} · ${f.area_hectares} ha · ${escapeHtml(f.plan_tier.toUpperCase())})</option>`
+        )
+        .join('');
+      if (selectId) farmSelect.value = String(selectId);
+      await loadFarmInsights(farmSelect.value);
+    } catch {
+      farmSelect.innerHTML = '<option value="">API Offline</option>';
+    }
+  }
+
+  async function loadFarmInsights(farmId) {
+    if (!farmId) return;
+    try {
+      const res = await fetch(`${API_BASE}/farms/${farmId}/insights`);
+      if (!res.ok) return;
+      const d = await res.json();
+
+      document.getElementById('farm-meta-bar').textContent =
+        `${d.farm_name} · ${d.area_hectares} ha · GPS (${d.centroid.lat}°, ${d.centroid.lng}°) · Plan: ${d.plan_tier.toUpperCase()}`;
+      document.getElementById('ins-temp').textContent = `${d.weather.temperature_c}°C · ${d.weather.rain_probability_pct}% Rain`;
+      document.getElementById('ins-forecast').textContent = `${d.weather.forecast} (Wind ${d.weather.wind_kmh} km/h)`;
+      document.getElementById('ins-ndvi').textContent = `NDVI ${d.crop_health.ndvi}`;
+      document.getElementById('ins-ndvi-status').textContent = d.crop_health.status;
+      document.getElementById('ins-moisture').textContent = `${d.crop_health.soil_moisture_pct}%`;
+      document.getElementById('ins-irrigation').textContent = d.crop_health.irrigation_advisory;
+      document.getElementById('ins-pest').textContent = d.crop_health.pest_risk;
+      document.getElementById('ins-agronomist').textContent = d.crop_health.agronomist_note;
+    } catch {
+      // ignore
+    }
+  }
+
+  farmSelect.addEventListener('change', () => loadFarmInsights(farmSelect.value));
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const farmer_name = form.farmer_name.value.trim();
+    const contact = form.contact.value.trim();
+    const farm_name = form.farm_name.value.trim();
+    const crop_type = form.crop_type.value;
+    const plan_tier = form.plan_tier.value;
+    const area_hectares = computeAreaHectares(points);
+
+    if (!farmer_name || !contact || !farm_name || points.length < 3 || area_hectares <= 0) {
+      feedback.textContent = 'Please enter farmer details and map at least 3 walk-around GPS points on the plot.';
+      feedback.classList.add('is-visible');
+      return;
+    }
+
+    const coordinates = points.map((p) => ({ lat: p.lat, lng: p.lng }));
+    try {
+      const res = await fetch(`${API_BASE}/farms`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ farmer_name, contact, farm_name, crop_type, plan_tier, coordinates, area_hectares }),
+      });
+      if (res.ok) {
+        const saved = await res.json();
+        feedback.textContent = `Registered "${farm_name}" (${area_hectares} ha, ${plan_tier.toUpperCase()} tier) to PostgreSQL! Live weather & crop health loaded.`;
+        feedback.classList.add('is-visible');
+        form.reset();
+        points = [];
+        drawWalkCanvas();
+        await loadRegisteredFarms(saved.farm.id);
+        return;
+      }
+    } catch {
+      // fallback
+    }
+    feedback.textContent = 'Unable to reach PostgreSQL API right now.';
+    feedback.classList.add('is-visible');
+  });
+
+  await loadRegisteredFarms();
 }
 
 /* 5. Dynamic Division Capabilities Explorer (PostgreSQL-backed) */

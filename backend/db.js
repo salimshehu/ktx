@@ -24,6 +24,18 @@ export async function initDatabase() {
       lead_role TEXT NOT NULL DEFAULT 'Field Engineering Team'
     );
 
+    CREATE TABLE IF NOT EXISTS farms (
+      id SERIAL PRIMARY KEY,
+      farmer_name TEXT NOT NULL,
+      contact TEXT NOT NULL,
+      farm_name TEXT NOT NULL,
+      crop_type TEXT NOT NULL,
+      plan_tier TEXT NOT NULL DEFAULT 'free',
+      coordinates JSONB NOT NULL,
+      area_hectares NUMERIC(10, 2) NOT NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+
     CREATE TABLE IF NOT EXISTS deployments (
       id SERIAL PRIMARY KEY,
       sector TEXT NOT NULL,
@@ -58,21 +70,44 @@ export async function initDatabase() {
     ADD COLUMN IF NOT EXISTS lead_role TEXT NOT NULL DEFAULT 'Field Engineering Team';
   `);
 
+  const { rows: farmCount } = await pool.query('SELECT COUNT(*)::int AS count FROM farms');
+  if (farmCount[0].count === 0) {
+    const sampleCoords = [
+      { lat: 11.9812, lng: 8.5201 },
+      { lat: 11.9845, lng: 8.5204 },
+      { lat: 11.9843, lng: 8.5242 },
+      { lat: 11.981, lng: 8.5238 },
+    ];
+    await pool.query(
+      `INSERT INTO farms (farmer_name, contact, farm_name, crop_type, plan_tier, coordinates, area_hectares)
+       VALUES ($1, $2, $3, $4, $5, $6::jsonb, $7)`,
+      [
+        'Ibrahim Musa',
+        'ibrahim.musa@savannafarms.ng',
+        'Kano North Maize Block',
+        'Maize',
+        'pro',
+        JSON.stringify(sampleCoords),
+        14.8,
+      ]
+    );
+  }
+
   const { rows: divCount } = await pool.query('SELECT COUNT(*)::int AS count FROM divisions');
   if (divCount[0].count === 0) {
     const seedDivisions = [
       {
         slug: 'agriculture',
-        eyebrow: 'Precision Agriculture',
-        title: 'Agronomist-Guided Crop & Soil Intelligence',
+        eyebrow: 'Precision Agriculture Hub',
+        title: 'Farmer Registration, Walk-Around Mapping & Crop Health',
         description:
-          'Our field agronomists pair multispectral drone surveys with LoRaWAN soil probes so farm teams can fine-tune irrigation and nutrient plans per plot.',
+          'Farmers register on web or mobile (Google Play & App Store / iCloud), walk their field perimeter to capture GPS boundaries, and receive weather and crop health advisories on Free or Subscription plans.',
         bullets: [
-          'Human-verified NDVI, NDRE, and thermal stress maps across 10,000+ hectare estates',
-          'Variable-rate fertilizer and micro-drip valve prescriptions reviewed by estate managers',
-          'Early pathogen & pest alerts 7–10 days before visible crop stress',
+          'Walk-around GPS polygon mapping via smartphone or web boundary tool',
+          'Hyperlocal weather forecasts, evapotranspiration, and rainfall alerts',
+          'NDVI crop health monitoring, pest warnings, and agronomist support',
         ],
-        sys_name: 'TX AgroSense · Field Telemetry',
+        sys_name: 'TX AgroSense · Farmer Hub',
         sys_status: 'LIVE FIELD SYNC',
         kpis: [
           { num: '+24.6%', desc: 'Net marketable yield uplift' },
@@ -80,7 +115,7 @@ export async function initDatabase() {
           { num: '1.2 cm', desc: 'Ground sampling distance' },
           { num: '99.4%', desc: 'LoRaWAN sensor uptime' },
         ],
-        stack: ['Multispectral UAV', 'LoRaWAN Soil Nodes', 'ISOBUS Actuation', 'Agronomist Review'],
+        stack: ['Mobile GPS Walk', 'iCloud & Play Sync', 'Weather & NDVI', 'Subscription Advisories'],
         lead_role: 'Lead Agronomists & Hydrologists',
       },
       {

@@ -27,6 +27,7 @@
 
       <nav aria-label="Primary Navigation">
         <ul class="nav-links" id="primary-nav">
+          <li><a href="#farmer-hub" id="nav-farmer-hub">Farmer Hub</a></li>
           <li><a href="#divisions" id="nav-divisions">Divisions</a></li>
           <li><a href="#explorer" id="nav-explorer">Capabilities</a></li>
           <li><a href="#estimator" id="nav-estimator">Impact Estimator</a></li>
@@ -37,7 +38,7 @@
 
       <div class="header-actions">
         <a href="admin.html" class="btn btn--secondary" id="header-admin-btn">Admin Console</a>
-        <a href="#contact" class="btn btn--primary" id="header-partner-btn">Partner With Us</a>
+        <a href="#farmer-hub" class="btn btn--primary" id="header-partner-btn">Register Farm</a>
         <button
           class="nav-toggle"
           id="nav-toggle-btn"
@@ -54,25 +55,42 @@
   </header>
 
   <main id="top">
-    <!-- Hero Section -->
+    <!-- Hero Section (Static Editorial) -->
     <section class="hero" aria-labelledby="hero-heading">
       <div class="container hero-grid">
         <div class="hero-content">
-          <span class="eyebrow">Human-Crafted Applied Science</span>
+          <span class="eyebrow">Precision Agriculture Hub &amp; Applied Systems</span>
           <h1 class="display-title" id="hero-heading">
-            Engineering grounded in soil, stone, and living biology.
+            Walk your farm perimeter. Unlock crop health &amp; weather intelligence.
           </h1>
           <p class="lead">
-            TX Limited brings together agronomists, field geologists, ML researchers, and wet-lab biologists to build practical, transparent technology for agriculture, mining, and biotechnology.
+            TX Limited centers on our Precision Agriculture Hub—where farmers register on the web or via our mobile app (Google Play &amp; iCloud), walk their land to map GPS boundaries, and receive hyperlocal weather and crop health advisories on Free or Subscription plans.
           </p>
 
           <div class="hero-actions">
-            <a href="#divisions" class="btn btn--primary" id="hero-explore-btn">
-              Explore Divisions
+            <a href="#farmer-hub" class="btn btn--primary" id="hero-explore-btn">
+              Register Your Farm
               <span class="btn__arrow" aria-hidden="true">&rarr;</span>
             </a>
-            <a href="#estimator" class="btn btn--secondary" id="hero-estimator-btn">
-              Estimate Site Impact
+            <a href="#divisions" class="btn btn--secondary" id="hero-estimator-btn">
+              Explore All 4 Divisions
+            </a>
+          </div>
+
+          <div class="app-badges" aria-label="Mobile App Downloads">
+            <a href="#farmer-hub" class="app-badge" id="badge-google-play">
+              <span>&#9654;</span>
+              <span>
+                <span class="app-badge__sub">Android Field App</span>
+                Get it on Google Play
+              </span>
+            </a>
+            <a href="#farmer-hub" class="app-badge" id="badge-icloud">
+              <span>&#9729;</span>
+              <span>
+                <span class="app-badge__sub">iOS &amp; iCloud Sync</span>
+                Download on App Store
+              </span>
             </a>
           </div>
 
@@ -113,6 +131,160 @@
           <span class="telemetry-pill">Loading field sensors...</span>
         </div>
         <button type="button" class="btn-sm" id="ping-telemetry-btn">Sync Field Nodes</button>
+      </div>
+    </section>
+
+    <!-- Precision Agriculture Farmer Hub (Dynamic PostgreSQL Registration + Insights) -->
+    <section class="section section--sage" id="farmer-hub" aria-labelledby="hub-heading">
+      <div class="container">
+        <div class="section-header reveal">
+          <div class="section-header__text">
+            <span class="eyebrow">Core Solution Hub · Precision Agriculture</span>
+            <h2 class="section-title" id="hub-heading">
+              Register your farm with walk-around GPS coordinates.
+            </h2>
+          </div>
+          <p class="lead">
+            Map your plot on the web or sync from the TX Field Mobile App (Google Play &amp; iCloud) to unlock live crop health, hyperlocal weather, and agronomist advisories.
+          </p>
+        </div>
+
+        <div class="hub-grid">
+          <!-- Left: Farm Registration & Walk-Around GPS Mapper -->
+          <form class="hub-card reveal" id="farm-reg-form" novalidate>
+            <h3 style="font-size: 1.35rem;">1. Farmer &amp; Walk-Around Farm Registration</h3>
+            <div class="form-row">
+              <div class="form-field">
+                <label for="farm-farmer-name">Farmer Name</label>
+                <input type="text" id="farm-farmer-name" name="farmer_name" placeholder="Amina Bello" required />
+              </div>
+              <div class="form-field">
+                <label for="farm-contact">Phone or Email (App / iCloud ID)</label>
+                <input type="text" id="farm-contact" name="contact" placeholder="amina@farm.ng" required />
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-field">
+                <label for="farm-name">Farm / Plot Name</label>
+                <input type="text" id="farm-name" name="farm_name" placeholder="Zaria South Sorghum Plot" required />
+              </div>
+              <div class="form-field">
+                <label for="farm-crop">Primary Crop</label>
+                <select id="farm-crop" name="crop_type">
+                  <option value="Maize">Maize</option>
+                  <option value="Rice">Rice</option>
+                  <option value="Sorghum">Sorghum</option>
+                  <option value="Soybean">Soybean</option>
+                  <option value="Cassava">Cassava</option>
+                  <option value="Vegetables">Vegetables</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-field">
+              <label for="farm-plan">Service Plan</label>
+              <select id="farm-plan" name="plan_tier">
+                <option value="free">Free Farmer Tier (Weather + Basic NDVI)</option>
+                <option value="pro">Pro Subscription ($12/mo — Daily Crop Health, Pest Alerts &amp; Agronomist)</option>
+                <option value="enterprise">Cooperative / Estate Plan (Custom Multi-Plot)</option>
+              </select>
+            </div>
+
+            <div class="walk-mapper">
+              <div class="walk-mapper__toolbar">
+                <span class="eyebrow" style="font-size: 0.7rem;">Walk-Around Perimeter GPS Mapper</span>
+                <div style="display: flex; gap: 0.4rem; flex-wrap: wrap;">
+                  <button type="button" class="btn-sm" id="btn-sim-walk">Simulate Walk-Around GPS</button>
+                  <button type="button" class="btn-sm" id="btn-device-gps">Use Device GPS</button>
+                  <button type="button" class="btn-sm" id="btn-clear-walk">Clear</button>
+                </div>
+              </div>
+              <canvas id="walk-canvas" class="walk-canvas" width="520" height="210" aria-label="Click to add walk-around farm boundary coordinates"></canvas>
+              <div class="walk-coords-meta">
+                <span id="walk-points-count">0 boundary points (click plot or simulate walk)</span>
+                <strong id="walk-area-display">0.00 ha</strong>
+              </div>
+            </div>
+
+            <button type="submit" class="btn btn--primary" id="farm-submit-btn">
+              Register Farm to PostgreSQL
+              <span class="btn__arrow" aria-hidden="true">&rarr;</span>
+            </button>
+            <div class="form-feedback" id="farm-reg-feedback" role="status" aria-live="polite"></div>
+          </form>
+
+          <!-- Right: Live Crop Health & Weather Dashboard for Registered Farms -->
+          <div class="hub-card reveal" id="farm-insights-panel">
+            <div style="display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap;">
+              <h3 style="font-size: 1.35rem;">2. Live Crop Health &amp; Weather</h3>
+              <select id="registered-farm-select" aria-label="Select registered farm" style="padding: 0.45rem 0.75rem; border: 1px solid var(--border-strong); border-radius: 4px; background: var(--bg-primary); font-size: 0.85rem;">
+                <option value="">Loading farms...</option>
+              </select>
+            </div>
+
+            <div id="farm-meta-bar" style="font-family: var(--font-mono); font-size: 0.78rem; color: var(--ink-secondary);">
+              Select a registered farm to inspect live satellite NDVI &amp; weather.
+            </div>
+
+            <div class="insights-grid" id="farm-insights-grid">
+              <div class="insight-tile">
+                <div class="insight-tile__label">Weather &amp; Rain</div>
+                <div class="insight-tile__val" id="ins-temp">—</div>
+                <div class="insight-tile__sub" id="ins-forecast">Loading forecast...</div>
+              </div>
+              <div class="insight-tile">
+                <div class="insight-tile__label">Crop Health (NDVI)</div>
+                <div class="insight-tile__val" id="ins-ndvi">—</div>
+                <div class="insight-tile__sub" id="ins-ndvi-status">Loading canopy...</div>
+              </div>
+              <div class="insight-tile">
+                <div class="insight-tile__label">Soil Moisture</div>
+                <div class="insight-tile__val" id="ins-moisture">—</div>
+                <div class="insight-tile__sub" id="ins-irrigation">—</div>
+              </div>
+              <div class="insight-tile">
+                <div class="insight-tile__label">Pest &amp; Agronomist</div>
+                <div class="insight-tile__val" style="font-size: 1rem;" id="ins-pest">—</div>
+                <div class="insight-tile__sub" id="ins-agronomist">—</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Static Free vs Subscription Plans -->
+        <div class="plans-grid reveal" aria-label="Farmer Service Plans">
+          <div class="plan-card">
+            <span class="eyebrow">Free Farmer Tier</span>
+            <div class="plan-card__price">$0 <span style="font-size: 0.9rem; font-weight: 400; color: var(--ink-muted);">/ month</span></div>
+            <p style="font-size: 0.9rem; color: var(--ink-secondary);">For individual farmers mapping 1 plot via web, Google Play, or iCloud.</p>
+            <ul class="explorer-panel__list">
+              <li>Walk-around GPS perimeter registration</li>
+              <li>5-day local weather &amp; rainfall alerts</li>
+              <li>Weekly canopy NDVI health snapshot</li>
+            </ul>
+          </div>
+          <div class="plan-card plan-card--featured">
+            <span class="eyebrow">Pro Farm Subscription</span>
+            <div class="plan-card__price">$12 <span style="font-size: 0.9rem; font-weight: 400; color: var(--ink-muted);">/ month</span></div>
+            <p style="font-size: 0.9rem; color: var(--ink-secondary);">Full crop health, irrigation scheduling, and human agronomist support.</p>
+            <ul class="explorer-panel__list">
+              <li>Daily high-res NDVI &amp; moisture stress alerts</li>
+              <li>Early pest &amp; disease risk warnings</li>
+              <li>Direct agronomist chat &amp; iCloud/Android sync</li>
+            </ul>
+          </div>
+          <div class="plan-card">
+            <span class="eyebrow eyebrow--ochre">Enterprise &amp; Cooperatives</span>
+            <div class="plan-card__price">Custom</div>
+            <p style="font-size: 0.9rem; color: var(--ink-secondary);">Multi-estate precision ag paired with TX BioFoundry bio-fertilizers.</p>
+            <ul class="explorer-panel__list">
+              <li>Unlimited plots, UAV fleets &amp; soil probes</li>
+              <li>Variable-rate ISOBUS prescription maps</li>
+              <li>Dedicated field engineering team</li>
+            </ul>
+          </div>
+        </div>
       </div>
     </section>
 

@@ -12,17 +12,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
 async function loadDashboard() {
   try {
-    const [healthRes, divRes, inqRes, telRes] = await Promise.all([
+    const [healthRes, divRes, inqRes, telRes, farmsRes] = await Promise.all([
       fetch(`${API_BASE}/health`),
       fetch(`${API_BASE}/divisions`),
       fetch(`${API_BASE}/inquiries`),
       fetch(`${API_BASE}/telemetry`),
+      fetch(`${API_BASE}/farms`),
     ]);
 
     const health = await healthRes.json();
     const divisions = await divRes.json();
     const inqData = await inqRes.json();
     const telData = await telRes.json();
+    const farmsData = await farmsRes.json();
 
     document.getElementById('admin-pg-badge').textContent = `${health.engine.toUpperCase()} // ${health.database}`;
     document.getElementById('stat-engine').textContent = 'PostgreSQL 16';
@@ -35,9 +37,37 @@ async function loadDashboard() {
     const logs = telData.logs || [];
     document.getElementById('stat-telemetry').textContent = logs.length;
     renderTelemetry(logs);
+
+    const farms = farmsData.farms || [];
+    renderFarms(farms);
   } catch (err) {
     document.getElementById('admin-pg-badge').textContent = 'API Offline';
   }
+}
+
+function renderFarms(farms) {
+  const tbody = document.getElementById('farms-tbody');
+  const badge = document.getElementById('stat-farms-badge');
+  if (badge) badge.textContent = `${farms.length} Farms`;
+  if (!tbody) return;
+
+  if (!farms.length) {
+    tbody.innerHTML = '<tr><td colspan="5">No farms registered yet.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = farms
+    .map(
+      (f) => `
+      <tr>
+        <td>#${f.id}</td>
+        <td><strong>${escapeHtml(f.farmer_name)}</strong><br /><small>${escapeHtml(f.contact)}</small></td>
+        <td><strong>${escapeHtml(f.farm_name)}</strong><br /><small>${escapeHtml(f.crop_type)}</small></td>
+        <td>${f.area_hectares} ha (${(f.coordinates || []).length} GPS pts)</td>
+        <td><span class="badge-tag">${escapeHtml(f.plan_tier.toUpperCase())}</span></td>
+      </tr>`
+    )
+    .join('');
 }
 
 function renderInquiries() {
