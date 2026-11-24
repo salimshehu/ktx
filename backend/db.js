@@ -93,117 +93,124 @@ export async function initDatabase() {
     );
   }
 
-  const { rows: divCount } = await pool.query('SELECT COUNT(*)::int AS count FROM divisions');
-  if (divCount[0].count === 0) {
-    const seedDivisions = [
-      {
-        slug: 'agriculture',
-        eyebrow: 'Precision Agriculture Hub',
-        title: 'Farmer Registration, Walk-Around Mapping & Crop Health',
-        description:
-          'Farmers register on web or mobile (Google Play & App Store / iCloud), walk their field perimeter to capture GPS boundaries, and receive weather and crop health advisories on Free or Subscription plans.',
-        bullets: [
-          'Walk-around GPS polygon mapping via smartphone or web boundary tool',
-          'Hyperlocal weather forecasts, evapotranspiration, and rainfall alerts',
-          'NDVI crop health monitoring, pest warnings, and agronomist support',
-        ],
-        sys_name: 'TX AgroSense · Farmer Hub',
-        sys_status: 'LIVE FIELD SYNC',
-        kpis: [
-          { num: '+24.6%', desc: 'Net marketable yield uplift' },
-          { num: '32%', desc: 'Reduction in freshwater draw' },
-          { num: '1.2 cm', desc: 'Ground sampling distance' },
-          { num: '99.4%', desc: 'LoRaWAN sensor uptime' },
-        ],
-        stack: ['Mobile GPS Walk', 'iCloud & Play Sync', 'Weather & NDVI', 'Subscription Advisories'],
-        lead_role: 'Lead Agronomists & Hydrologists',
-      },
-      {
-        slug: 'mining',
-        eyebrow: 'Mining Tech Solutions',
-        title: 'Geologist-Led Ore Control & Safer Extraction',
-        description:
-          'Built with site geologists and mine planners, TX StrataVision unifies LiDAR pit mapping, slope-stability radar, and inline XRF assaying.',
-        bullets: [
-          'Continuous pit-wall millimeter radar monitored by geotechnical safety officers',
-          'Inline conveyor ore-sorting models separating waste rock before primary milling',
-          'Haulage dispatch schedules tuned for operator safety and lower diesel burn',
-        ],
-        sys_name: 'TX StrataVision · Geological Assay',
-        sys_status: 'ACTIVE ASSAY',
-        kpis: [
-          { num: '38%', desc: 'Reduction in haulage & reagent waste' },
-          { num: '< 120 ms', desc: 'Edge XRF ore-grade classification' },
-          { num: '0.4 mm', desc: 'Slope radar deformation sensitivity' },
-          { num: '24/7', desc: 'Geotechnical safety monitoring' },
-        ],
-        stack: ['LiDAR SLAM', 'Inline XRF', 'Slope Radar', 'Geologist Sign-Off'],
-        lead_role: 'Geologists & Mining Engineers',
-      },
-      {
-        slug: 'aiml',
-        eyebrow: 'AI & Machine Learning',
-        title: 'Human-Interpretable Models Built for Field Teams',
-        description:
-          'Our ML researchers craft transparent vision and time-series models that run locally on rugged field hardware with clear human-in-the-loop oversight.',
-        bullets: [
-          'Air-gapped edge deployment on industrial ARM and GPU modules in remote sites',
-          'Explainable anomaly flags that show operators the exact sensor evidence',
-          'Continuous active-learning loops curated by domain specialists',
-        ],
-        sys_name: 'TX Inference · Edge Compute',
-        sys_status: 'HUMAN-IN-LOOP',
-        kpis: [
-          { num: '8 ms', desc: 'On-device vision inference latency' },
-          { num: '99.1%', desc: 'Equipment anomaly recall rate' },
-          { num: '0 kbps', desc: 'Required uplink for core inference' },
-          { num: '4.8 TB', desc: 'Daily field telemetry processed' },
-        ],
-        stack: ['Geospatial ViT', 'Quantized TensorRT', 'Explainable Alerts', 'Federated Sync'],
-        lead_role: 'Applied ML Researchers',
-      },
-      {
-        slug: 'biotech',
-        eyebrow: 'Biotech Technology',
-        title: 'Biologist-Curated Bio-Foundries & Soil Remediation',
-        description:
-          'Our microbiologists and bioprocess engineers develop resilient bio-fertilizers, drought-tolerant traits, and bio-leaching consortia for cleaner recovery.',
-        bullets: [
-          'Droplet microfluidics screening 45,000+ natural microbial variants weekly',
-          'Rhizosphere bio-inoculants tailored to regional soil chemistry',
-          'Acidophilic bio-leaching cultures for low-impact tailings remediation',
-        ],
-        sys_name: 'TX BioFoundry · Wet-Lab Array',
-        sys_status: 'CULTURE OPTIMAL',
-        kpis: [
-          { num: '45,000', desc: 'Automated assays per week' },
-          { num: '4.2x', desc: 'Faster strain optimization cycle' },
-          { num: '88%', desc: 'Tailings heavy-metal detoxification' },
-          { num: '-41%', desc: 'Synthetic fertilizer dependency' },
-        ],
-        stack: ['Microfluidic Screening', 'Genomic Modeling', 'Bioreactor Telemetry', 'Wet-Lab Validation'],
-        lead_role: 'Microbiologists & Bioprocess Leads',
-      },
-    ];
+  const seedDivisions = [
+    {
+      slug: 'agriculture',
+      eyebrow: 'farmSense · Precision Agriculture',
+      title: 'farmSense: Walk-Around Farm Mapping, Weather & Crop Health',
+      description:
+        'Register on web or download the farmSense app (Google Play & App Store / iCloud), walk your perimeter to capture GPS boundaries, and receive crop health and weather advisories on Free or Pro Subscription plans.',
+      bullets: [
+        'Walk-around GPS polygon mapping via smartphone or web boundary tool',
+        'Hyperlocal weather forecasts, rainfall alerts, and irrigation guidance',
+        'Daily NDVI crop health monitoring and agronomist support',
+      ],
+      sys_name: 'farmSense',
+      sys_status: 'LIVE FIELD SYNC',
+      kpis: [
+        { num: '+24.6%', desc: 'Net marketable yield uplift' },
+        { num: '32%', desc: 'Freshwater & input savings' },
+        { num: '1.2 cm', desc: 'Multispectral resolution' },
+        { num: 'Free / $12', desc: 'Monthly farmer plans' },
+      ],
+      stack: ['Mobile GPS Walk', 'Google Play & iCloud', 'Weather & NDVI', 'Agronomist Review'],
+      lead_role: 'Agronomists & Hydrologists',
+    },
+    {
+      slug: 'mining',
+      eyebrow: 'Vmines · Mining Tech Solutions',
+      title: 'Vmines: Geological LiDAR, Ore Control & Safer Extraction',
+      description:
+        'Built with site geologists and mine planners, Vmines unifies LiDAR pit mapping, slope-stability radar, inline XRF assaying, and operator-assisted haulage dispatch.',
+      bullets: [
+        'Continuous pit-wall millimeter radar monitored by geotechnical safety officers',
+        'Inline conveyor ore-sorting separating waste rock before primary milling',
+        'Haulage dispatch schedules tuned for operator safety and lower fuel burn',
+      ],
+      sys_name: 'Vmines',
+      sys_status: 'ACTIVE ASSAY',
+      kpis: [
+        { num: '38%', desc: 'Haulage & reagent waste reduction' },
+        { num: '< 120 ms', desc: 'Edge XRF ore-grade assay' },
+        { num: '0.4 mm', desc: 'Slope radar sensitivity' },
+        { num: '24/7', desc: 'Geotechnical monitoring' },
+      ],
+      stack: ['LiDAR SLAM', 'Inline XRF', 'Slope Radar', 'Geologist Sign-Off'],
+      lead_role: 'Geologists & Mining Engineers',
+    },
+    {
+      slug: 'aiml',
+      eyebrow: 'techx · AI & Machine Learning',
+      title: 'techx: Human-Interpretable Edge AI for Field Operations',
+      description:
+        'techx builds transparent computer vision, geospatial transformers, and predictive maintenance models that run locally on rugged hardware with human-in-the-loop oversight.',
+      bullets: [
+        'Air-gapped edge deployment on industrial ARM and GPU modules',
+        'Explainable anomaly flags showing operators exact sensor evidence',
+        'Continuous active-learning loops curated by domain specialists',
+      ],
+      sys_name: 'techx',
+      sys_status: 'HUMAN-IN-LOOP',
+      kpis: [
+        { num: '8 ms', desc: 'On-device vision latency' },
+        { num: '99.1%', desc: 'Anomaly recall rate' },
+        { num: '0 kbps', desc: 'Required uplink for inference' },
+        { num: '4.8 TB', desc: 'Daily field telemetry' },
+      ],
+      stack: ['Geospatial ViT', 'Quantized TensorRT', 'Explainable Alerts', 'Federated Sync'],
+      lead_role: 'Applied ML Researchers',
+    },
+    {
+      slug: 'biotech',
+      eyebrow: 'Biotx · Biotech Technology',
+      title: 'Biotx: Wet-Lab Bio-Foundries & Soil Remediation',
+      description:
+        'Biotx develops resilient bio-fertilizers, drought-tolerant crop traits, and acidophilic bio-leaching consortia for cleaner mineral recovery.',
+      bullets: [
+        'Droplet microfluidics screening 45,000+ natural microbial variants weekly',
+        'Rhizosphere bio-inoculants tailored to regional soil chemistry',
+        'Bio-leaching cultures for low-impact mine tailings remediation',
+      ],
+      sys_name: 'Biotx',
+      sys_status: 'CULTURE OPTIMAL',
+      kpis: [
+        { num: '45,000', desc: 'Automated assays / week' },
+        { num: '4.2x', desc: 'Faster strain optimization' },
+        { num: '88%', desc: 'Tailings heavy-metal detox' },
+        { num: '-41%', desc: 'Synthetic urea dependency' },
+      ],
+      stack: ['Microfluidic Screening', 'Genomic Modeling', 'Bioreactor Telemetry', 'Wet-Lab Validation'],
+      lead_role: 'Microbiologists & Bioprocess Leads',
+    },
+  ];
 
-    for (const d of seedDivisions) {
-      await pool.query(
-        `INSERT INTO divisions (slug, eyebrow, title, description, bullets, sys_name, sys_status, kpis, stack, lead_role)
-         VALUES ($1, $2, $3, $4, $5::jsonb, $6, $7, $8::jsonb, $9::jsonb, $10)`,
-        [
-          d.slug,
-          d.eyebrow,
-          d.title,
-          d.description,
-          JSON.stringify(d.bullets),
-          d.sys_name,
-          d.sys_status,
-          JSON.stringify(d.kpis),
-          JSON.stringify(d.stack),
-          d.lead_role,
-        ]
-      );
-    }
+  for (const d of seedDivisions) {
+    await pool.query(
+      `INSERT INTO divisions (slug, eyebrow, title, description, bullets, sys_name, sys_status, kpis, stack, lead_role)
+       VALUES ($1, $2, $3, $4, $5::jsonb, $6, $7, $8::jsonb, $9::jsonb, $10)
+       ON CONFLICT (slug) DO UPDATE SET
+         eyebrow = EXCLUDED.eyebrow,
+         title = EXCLUDED.title,
+         description = EXCLUDED.description,
+         bullets = EXCLUDED.bullets,
+         sys_name = EXCLUDED.sys_name,
+         sys_status = EXCLUDED.sys_status,
+         kpis = EXCLUDED.kpis,
+         stack = EXCLUDED.stack,
+         lead_role = EXCLUDED.lead_role`,
+      [
+        d.slug,
+        d.eyebrow,
+        d.title,
+        d.description,
+        JSON.stringify(d.bullets),
+        d.sys_name,
+        d.sys_status,
+        JSON.stringify(d.kpis),
+        JSON.stringify(d.stack),
+        d.lead_role,
+      ]
+    );
   }
 
   const { rows: depCount } = await pool.query('SELECT COUNT(*)::int AS count FROM deployments');

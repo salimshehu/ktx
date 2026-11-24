@@ -1,35 +1,31 @@
 /* ==========================================================================
-   TX Limited — Dynamic Frontend Logic (PostgreSQL-Backed + Daylight Canvas)
+   TX Limited — Minimalist Unified Platform Logic (PostgreSQL-Backed)
+   Platforms: farmSense (AgriTech) · Vmines (Mining) · techx (AI&ML) · Biotx (Biotech)
    ========================================================================== */
 
 const API_BASE = 'http://localhost:3001/api';
 
+let currentPlatform = 'agriculture';
+let allDeployments = [];
+let allTelemetry = [];
+
 document.addEventListener('DOMContentLoaded', () => {
   initHeaderScroll();
   initMobileNav();
-  initScrollReveal();
-  initLiveTelemetryFeed();
+  initUnifiedPlatformHub();
   initFarmerHub();
-  initDivisionExplorer();
-  initImpactEstimator();
-  initDeploymentsFilter();
   initContactForm();
   initHeroTelemetryCanvas();
 });
 
-/* 1. Sticky Header Scroll State */
 function initHeaderScroll() {
   const header = document.getElementById('site-header');
   if (!header) return;
-
-  const onScroll = () => {
-    header.classList.toggle('is-scrolled', window.scrollY > 16);
-  };
+  const onScroll = () => header.classList.toggle('is-scrolled', window.scrollY > 16);
   window.addEventListener('scroll', onScroll, { passive: true });
   onScroll();
 }
 
-/* 2. Mobile Navigation Drawer */
 function initMobileNav() {
   const toggleBtn = document.getElementById('nav-toggle-btn');
   const nav = document.getElementById('primary-nav');
@@ -48,89 +44,153 @@ function initMobileNav() {
   });
 }
 
-/* 3. IntersectionObserver Scroll Reveal */
-function initScrollReveal() {
-  const elements = document.querySelectorAll('.reveal');
-  if (!elements.length) return;
+/* Unified Minimalist 4-Platform Hub: farmSense, Vmines, techx, Biotx */
+async function initUnifiedPlatformHub() {
+  const tabs = document.querySelectorAll('#platforms .tab-btn');
+  const jumpLinks = document.querySelectorAll('[data-jump]');
+  const panel = document.getElementById('explorer-panel');
+  const farmSenseHub = document.getElementById('farmsense-hub');
+  const pingBtn = document.getElementById('ping-telemetry-btn');
+  if (!tabs.length || !panel) return;
 
-  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-    elements.forEach((el) => el.classList.add('is-visible'));
-    return;
+  let divisions = {};
+  try {
+    const [divRes, depRes, telRes] = await Promise.all([
+      fetch(`${API_BASE}/divisions`),
+      fetch(`${API_BASE}/deployments`),
+      fetch(`${API_BASE}/telemetry`),
+    ]);
+    if (divRes.ok) divisions = await divRes.json();
+    if (depRes.ok) allDeployments = (await depRes.json()).deployments || [];
+    if (telRes.ok) allTelemetry = (await telRes.json()).logs || [];
+  } catch {
+    // API offline
   }
 
-  const observer = new IntersectionObserver(
-    (entries, obs) => {
-      entries.forEach((entry) => {
-        if (entry.isIntersecting) {
-          entry.target.classList.add('is-visible');
-          obs.unobserve(entry.target);
-        }
-      });
-    },
-    { threshold: 0.1, rootMargin: '0px 0px -20px 0px' }
-  );
+  const eyebrowEl = document.getElementById('exp-eyebrow');
+  const titleEl = document.getElementById('exp-title');
+  const descEl = document.getElementById('exp-desc');
+  const listEl = document.getElementById('exp-list');
+  const sysNameEl = document.getElementById('exp-sys-name');
+  const sysStatusEl = document.getElementById('exp-sys-status');
+  const kpisEl = document.getElementById('exp-kpis');
+  const stackEl = document.getElementById('exp-stack');
 
-  elements.forEach((el) => observer.observe(el));
-}
+  function renderTelemetry(slug) {
+    const feedEl = document.getElementById('live-telemetry-feed');
+    const labelEl = document.getElementById('active-telemetry-label');
+    if (!feedEl) return;
 
-/* 4. Live PostgreSQL Field Telemetry Feed */
-async function initLiveTelemetryFeed() {
-  const feedEl = document.getElementById('live-telemetry-feed');
-  const pingBtn = document.getElementById('ping-telemetry-btn');
-  if (!feedEl) return;
+    const brandMap = { agriculture: 'farmSense', mining: 'Vmines', aiml: 'techx', biotech: 'Biotx' };
+    if (labelEl) labelEl.textContent = `${brandMap[slug] || 'TX'} Live Telemetry`;
 
-  async function refreshFeed() {
-    try {
-      const res = await fetch(`${API_BASE}/telemetry`);
-      if (!res.ok) throw new Error('Telemetry offline');
-      const data = await res.json();
-      const logs = (data.logs || []).slice(0, 4);
+    const filtered = allTelemetry.filter((t) => t.division === slug);
+    const items = (filtered.length ? filtered : allTelemetry).slice(0, 4);
 
-      if (!logs.length) {
-        feedEl.innerHTML = '<span class="telemetry-pill">No active readings</span>';
-        return;
-      }
+    if (!items.length) {
+      feedEl.innerHTML = '<span class="telemetry-pill">No readings yet</span>';
+      return;
+    }
 
-      feedEl.innerHTML = logs
+    feedEl.innerHTML = items
+      .map(
+        (l) => `
+        <span class="telemetry-pill">
+          <span class="telemetry-pill__node">${escapeHtml(l.node_id)}</span>
+          <span>${escapeHtml(l.metric_name)}:</span>
+          <strong>${escapeHtml(l.metric_value)}</strong>
+        </span>`
+      )
+      .join('');
+  }
+
+  function renderDeployments(slug) {
+    const grid = document.getElementById('deployments-grid');
+    if (!grid) return;
+
+    const filtered = allDeployments.filter((d) => d.division_slug === slug);
+    const items = filtered.length ? filtered : allDeployments.slice(0, 2);
+
+    grid.innerHTML = items
+      .map(
+        (d) => `
+        <article class="case-card">
+          <span class="case-card__sector">${escapeHtml(d.sector)}</span>
+          <h3 class="case-card__title">${escapeHtml(d.title)}</h3>
+          <p class="case-card__body">${escapeHtml(d.summary)}</p>
+          <div class="case-card__outcome">Outcome: ${escapeHtml(d.outcome)}</div>
+        </article>`
+      )
+      .join('');
+  }
+
+  function selectPlatform(slug) {
+    currentPlatform = slug;
+    tabs.forEach((t) => t.setAttribute('aria-selected', String(t.dataset.division === slug)));
+
+    if (farmSenseHub) {
+      farmSenseHub.style.display = slug === 'agriculture' ? 'block' : 'none';
+    }
+
+    const data = divisions[slug];
+    if (data) {
+      eyebrowEl.textContent = data.leadRole ? `${data.eyebrow} · ${data.leadRole}` : data.eyebrow;
+      titleEl.textContent = data.title;
+      descEl.textContent = data.desc;
+      sysNameEl.textContent = data.sysName;
+      sysStatusEl.textContent = data.sysStatus;
+      listEl.innerHTML = data.bullets.map((b) => `<li>${escapeHtml(b)}</li>`).join('');
+      kpisEl.innerHTML = data.kpis
         .map(
-          (l) => `
-          <span class="telemetry-pill">
-            <span class="telemetry-pill__node">${escapeHtml(l.node_id)}</span>
-            <span>${escapeHtml(l.metric_name)}:</span>
-            <strong>${escapeHtml(l.metric_value)}</strong>
-          </span>`
+          (k) => `
+          <div>
+            <div class="telemetry-kpi__num">${escapeHtml(k.num)}</div>
+            <div class="telemetry-kpi__desc">${escapeHtml(k.desc)}</div>
+          </div>`
         )
         .join('');
-    } catch {
-      feedEl.innerHTML = '<span class="telemetry-pill">Field sync standby</span>';
+      stackEl.innerHTML = data.stack.map((s) => `<span class="stack-chip">${escapeHtml(s)}</span>`).join('');
     }
+
+    renderTelemetry(slug);
+    renderDeployments(slug);
   }
+
+  tabs.forEach((tab) => {
+    tab.addEventListener('click', () => selectPlatform(tab.dataset.division));
+  });
+
+  jumpLinks.forEach((link) => {
+    link.addEventListener('click', () => selectPlatform(link.dataset.jump));
+  });
 
   pingBtn?.addEventListener('click', async () => {
     pingBtn.textContent = 'Syncing...';
-    const sampleNodes = [
-      { node_id: 'AG-04', division: 'agriculture', metric_name: 'SOIL_MOISTURE', metric_value: `${(36 + Math.random() * 8).toFixed(1)}%` },
-      { node_id: 'MN-02', division: 'mining', metric_name: 'ORE_GRADE', metric_value: `${(92 + Math.random() * 4).toFixed(1)}%` },
-      { node_id: 'BIO-05', division: 'biotech', metric_name: 'CULTURE_PH', metric_value: `${(6.6 + Math.random() * 0.4).toFixed(2)}` },
-    ];
-    const pick = sampleNodes[Math.floor(Math.random() * sampleNodes.length)];
+    const samples = {
+      agriculture: { node_id: 'FS-04', division: 'agriculture', metric_name: 'SOIL_MOISTURE', metric_value: `${(36 + Math.random() * 8).toFixed(1)}%` },
+      mining: { node_id: 'VM-02', division: 'mining', metric_name: 'ORE_GRADE', metric_value: `${(92 + Math.random() * 4).toFixed(1)}%` },
+      aiml: { node_id: 'TX-07', division: 'aiml', metric_name: 'EDGE_LATENCY', metric_value: `${(6 + Math.random() * 3).toFixed(1)}ms` },
+      biotech: { node_id: 'BX-03', division: 'biotech', metric_name: 'CULTURE_PH', metric_value: `${(6.6 + Math.random() * 0.4).toFixed(2)}` },
+    };
     try {
       await fetch(`${API_BASE}/telemetry`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(pick),
+        body: JSON.stringify(samples[currentPlatform] || samples.agriculture),
       });
+      const res = await fetch(`${API_BASE}/telemetry`);
+      if (res.ok) allTelemetry = (await res.json()).logs || [];
     } catch {
-      // ignore if offline
+      // ignore
     }
-    await refreshFeed();
-    pingBtn.textContent = 'Sync Field Nodes';
+    renderTelemetry(currentPlatform);
+    pingBtn.textContent = 'Sync Nodes';
   });
 
-  await refreshFeed();
+  selectPlatform('agriculture');
 }
 
-/* 4b. Precision Agriculture Farmer Hub (Walk-Around GPS + Live Insights) */
+/* farmSense Interactive Hub (Walk-Around GPS + Live Weather & Crop Health) */
 async function initFarmerHub() {
   const canvas = document.getElementById('walk-canvas');
   const pointsCountEl = document.getElementById('walk-points-count');
@@ -145,14 +205,12 @@ async function initFarmerHub() {
   if (!canvas || !form || !farmSelect) return;
   const ctx = canvas.getContext('2d');
 
-  // Store normalized points {x, y} on canvas and {lat, lng} GPS coordinates
   let points = [];
   const baseLat = 11.98;
   const baseLng = 8.52;
 
   function computeAreaHectares(pts) {
     if (pts.length < 3) return 0;
-    // Shoelace formula on scaled meters (1 canvas px ~ 2.2m)
     let area = 0;
     for (let i = 0; i < pts.length; i++) {
       const j = (i + 1) % pts.length;
@@ -166,7 +224,6 @@ async function initFarmerHub() {
     ctx.fillStyle = '#FAF9F5';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // Subtle field plot lines
     ctx.strokeStyle = 'rgba(31, 74, 56, 0.08)';
     ctx.lineWidth = 1;
     for (let x = 40; x < canvas.width; x += 40) {
@@ -206,7 +263,7 @@ async function initFarmerHub() {
     }
 
     const ha = computeAreaHectares(points);
-    pointsCountEl.textContent = `${points.length} boundary points`;
+    pointsCountEl.textContent = `${points.length} points`;
     areaDisplayEl.textContent = `${ha.toFixed(2)} ha`;
   }
 
@@ -229,10 +286,9 @@ async function initFarmerHub() {
     const cx = canvas.width / 2 + (Math.random() * 40 - 20);
     const cy = canvas.height / 2 + (Math.random() * 20 - 10);
     const rx = 120 + Math.random() * 40;
-    const ry = 65 + Math.random() * 20;
-    const vertices = 5;
-    for (let i = 0; i < vertices; i++) {
-      const angle = (i / vertices) * Math.PI * 2;
+    const ry = 60 + Math.random() * 20;
+    for (let i = 0; i < 5; i++) {
+      const angle = (i / 5) * Math.PI * 2;
       const jitter = 0.85 + Math.random() * 0.3;
       addPoint(cx + Math.cos(angle) * rx * jitter, cy + Math.sin(angle) * ry * jitter);
     }
@@ -246,9 +302,7 @@ async function initFarmerHub() {
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         const idx = points.length;
-        const x = 100 + (idx * 90) % 340;
-        const y = 60 + ((idx * 55) % 110);
-        addPoint(x, y, Number(pos.coords.latitude.toFixed(5)), Number(pos.coords.longitude.toFixed(5)));
+        addPoint(100 + (idx * 90) % 340, 60 + ((idx * 55) % 110), Number(pos.coords.latitude.toFixed(5)), Number(pos.coords.longitude.toFixed(5)));
       },
       () => simBtn?.click(),
       { timeout: 3000 }
@@ -266,17 +320,13 @@ async function initFarmerHub() {
     try {
       const res = await fetch(`${API_BASE}/farms`);
       if (!res.ok) return;
-      const data = await res.json();
-      const farms = data.farms || [];
+      const farms = (await res.json()).farms || [];
       if (!farms.length) {
-        farmSelect.innerHTML = '<option value="">No farms registered yet</option>';
+        farmSelect.innerHTML = '<option value="">No farms registered</option>';
         return;
       }
       farmSelect.innerHTML = farms
-        .map(
-          (f) =>
-            `<option value="${f.id}">${escapeHtml(f.farm_name)} (${escapeHtml(f.crop_type)} · ${f.area_hectares} ha · ${escapeHtml(f.plan_tier.toUpperCase())})</option>`
-        )
+        .map((f) => `<option value="${f.id}">${escapeHtml(f.farm_name)} (${escapeHtml(f.crop_type)} · ${f.area_hectares} ha)</option>`)
         .join('');
       if (selectId) farmSelect.value = String(selectId);
       await loadFarmInsights(farmSelect.value);
@@ -291,11 +341,10 @@ async function initFarmerHub() {
       const res = await fetch(`${API_BASE}/farms/${farmId}/insights`);
       if (!res.ok) return;
       const d = await res.json();
-
       document.getElementById('farm-meta-bar').textContent =
-        `${d.farm_name} · ${d.area_hectares} ha · GPS (${d.centroid.lat}°, ${d.centroid.lng}°) · Plan: ${d.plan_tier.toUpperCase()}`;
+        `${d.farm_name} · ${d.area_hectares} ha · GPS (${d.centroid.lat}°, ${d.centroid.lng}°) · ${d.plan_tier.toUpperCase()}`;
       document.getElementById('ins-temp').textContent = `${d.weather.temperature_c}°C · ${d.weather.rain_probability_pct}% Rain`;
-      document.getElementById('ins-forecast').textContent = `${d.weather.forecast} (Wind ${d.weather.wind_kmh} km/h)`;
+      document.getElementById('ins-forecast').textContent = d.weather.forecast;
       document.getElementById('ins-ndvi').textContent = `NDVI ${d.crop_health.ndvi}`;
       document.getElementById('ins-ndvi-status').textContent = d.crop_health.status;
       document.getElementById('ins-moisture').textContent = `${d.crop_health.soil_moisture_pct}%`;
@@ -319,7 +368,7 @@ async function initFarmerHub() {
     const area_hectares = computeAreaHectares(points);
 
     if (!farmer_name || !contact || !farm_name || points.length < 3 || area_hectares <= 0) {
-      feedback.textContent = 'Please enter farmer details and map at least 3 walk-around GPS points on the plot.';
+      feedback.textContent = 'Please enter farmer details and map at least 3 walk-around GPS points.';
       feedback.classList.add('is-visible');
       return;
     }
@@ -333,7 +382,7 @@ async function initFarmerHub() {
       });
       if (res.ok) {
         const saved = await res.json();
-        feedback.textContent = `Registered "${farm_name}" (${area_hectares} ha, ${plan_tier.toUpperCase()} tier) to PostgreSQL! Live weather & crop health loaded.`;
+        feedback.textContent = `Registered "${farm_name}" (${area_hectares} ha) to farmSense!`;
         feedback.classList.add('is-visible');
         form.reset();
         points = [];
@@ -342,7 +391,7 @@ async function initFarmerHub() {
         return;
       }
     } catch {
-      // fallback
+      // ignore
     }
     feedback.textContent = 'Unable to reach PostgreSQL API right now.';
     feedback.classList.add('is-visible');
@@ -351,181 +400,7 @@ async function initFarmerHub() {
   await loadRegisteredFarms();
 }
 
-/* 5. Dynamic Division Capabilities Explorer (PostgreSQL-backed) */
-async function initDivisionExplorer() {
-  const tabs = document.querySelectorAll('#explorer .tab-btn');
-  const panel = document.getElementById('explorer-panel');
-  if (!tabs.length || !panel) return;
-
-  let activeData = {};
-  try {
-    const res = await fetch(`${API_BASE}/divisions`);
-    if (res.ok) {
-      activeData = await res.json();
-    }
-  } catch {
-    // Offline fallback handled below
-  }
-
-  const eyebrowEl = document.getElementById('exp-eyebrow');
-  const titleEl = document.getElementById('exp-title');
-  const descEl = document.getElementById('exp-desc');
-  const listEl = document.getElementById('exp-list');
-  const sysNameEl = document.getElementById('exp-sys-name');
-  const sysStatusEl = document.getElementById('exp-sys-status');
-  const kpisEl = document.getElementById('exp-kpis');
-  const stackEl = document.getElementById('exp-stack');
-
-  function renderDivision(key, tabId) {
-    const data = activeData[key];
-    if (!data) return;
-
-    panel.setAttribute('aria-labelledby', tabId);
-    eyebrowEl.textContent = data.leadRole ? `${data.eyebrow} · ${data.leadRole}` : data.eyebrow;
-    titleEl.textContent = data.title;
-    descEl.textContent = data.desc;
-    sysNameEl.textContent = data.sysName;
-    sysStatusEl.textContent = data.sysStatus;
-
-    listEl.innerHTML = data.bullets.map((b) => `<li>${escapeHtml(b)}</li>`).join('');
-    kpisEl.innerHTML = data.kpis
-      .map(
-        (k) => `
-        <div>
-          <div class="telemetry-kpi__num">${escapeHtml(k.num)}</div>
-          <div class="telemetry-kpi__desc">${escapeHtml(k.desc)}</div>
-        </div>`
-      )
-      .join('');
-    stackEl.innerHTML = data.stack.map((s) => `<span class="stack-chip">${escapeHtml(s)}</span>`).join('');
-  }
-
-  renderDivision('agriculture', 'tab-ag');
-
-  tabs.forEach((tab) => {
-    tab.addEventListener('click', () => {
-      tabs.forEach((t) => t.setAttribute('aria-selected', 'false'));
-      tab.setAttribute('aria-selected', 'true');
-      renderDivision(tab.dataset.division, tab.id);
-    });
-  });
-}
-
-/* 6. Interactive Operational Impact Estimator */
-function initImpactEstimator() {
-  const sectorEl = document.getElementById('est-sector');
-  const scaleEl = document.getElementById('est-scale');
-  const scaleDisplay = document.getElementById('est-scale-display');
-  const noteEl = document.getElementById('est-note');
-  const m1Val = document.getElementById('est-metric-1-val');
-  const m1Label = document.getElementById('est-metric-1-label');
-  const m2Val = document.getElementById('est-metric-2-val');
-  const m2Label = document.getElementById('est-metric-2-label');
-  const m3Val = document.getElementById('est-metric-3-val');
-  const m3Label = document.getElementById('est-metric-3-label');
-  const m4Val = document.getElementById('est-metric-4-val');
-  const m4Label = document.getElementById('est-metric-4-label');
-
-  if (!sectorEl || !scaleEl) return;
-
-  function updateEstimate() {
-    const sector = sectorEl.value;
-    const val = Number(scaleEl.value);
-
-    if (sector === 'agriculture') {
-      scaleDisplay.textContent = `${val.toLocaleString()} ha`;
-      m1Val.textContent = `${((val * 320) / 1000).toFixed(1)}k m³`;
-      m1Label.textContent = 'Annual freshwater saved';
-      m2Val.textContent = '+24.6%';
-      m2Label.textContent = 'Projected yield uplift';
-      m3Val.textContent = '-32%';
-      m3Label.textContent = 'Synthetic fertilizer reduction';
-      m4Val.textContent = `${Math.max(4, Math.round(val / 1200))} wks`;
-      m4Label.textContent = 'Field commissioning';
-      noteEl.textContent = 'Benchmarked from commercial estates with TX AgroSense + field agronomist support.';
-    } else if (sector === 'mining') {
-      scaleDisplay.textContent = `${val.toLocaleString()} t/day`;
-      m1Val.textContent = `${Math.round(val * 0.28).toLocaleString()} t`;
-      m1Label.textContent = 'Waste rock sorted pre-mill';
-      m2Val.textContent = '-29%';
-      m2Label.textContent = 'Milling energy reduction';
-      m3Val.textContent = '+14.2%';
-      m3Label.textContent = 'Net mineral recovery';
-      m4Val.textContent = '24/7';
-      m4Label.textContent = 'Geotechnical radar coverage';
-      noteEl.textContent = 'Estimated from inline XRF sorting and geologist-led pit telemetry deployments.';
-    } else {
-      scaleDisplay.textContent = `${val.toLocaleString()} L`;
-      m1Val.textContent = `${Math.round(val * 1.8).toLocaleString()} kg`;
-      m1Label.textContent = 'Annual bio-inoculant output';
-      m2Val.textContent = '4.2x';
-      m2Label.textContent = 'Faster strain optimization';
-      m3Val.textContent = '88%';
-      m3Label.textContent = 'Heavy-metal detox rate';
-      m4Val.textContent = '45k/wk';
-      m4Label.textContent = 'Microfluidic assay capacity';
-      noteEl.textContent = 'Modeled from TX BioFoundry wet-lab fermentation and screening benchmarks.';
-    }
-  }
-
-  sectorEl.addEventListener('change', updateEstimate);
-  scaleEl.addEventListener('input', updateEstimate);
-  updateEstimate();
-}
-
-/* 7. Dynamic Field Deployments Grid (PostgreSQL-backed + Filterable) */
-async function initDeploymentsFilter() {
-  const grid = document.getElementById('deployments-grid');
-  const filterBtns = document.querySelectorAll('#deployments .filter-bar .tab-btn');
-  if (!grid) return;
-
-  let deployments = [];
-  try {
-    const res = await fetch(`${API_BASE}/deployments`);
-    if (res.ok) {
-      const data = await res.json();
-      deployments = data.deployments || [];
-    }
-  } catch {
-    deployments = [];
-  }
-
-  function renderCards(filter) {
-    const items =
-      filter === 'all'
-        ? deployments
-        : deployments.filter((d) => d.division_slug === filter);
-
-    if (!items.length) {
-      grid.innerHTML = '<article class="case-card"><p>No deployments recorded for this filter.</p></article>';
-      return;
-    }
-
-    grid.innerHTML = items
-      .map(
-        (d) => `
-        <article class="case-card">
-          <span class="case-card__sector">${escapeHtml(d.sector)}</span>
-          <h3 class="case-card__title">${escapeHtml(d.title)}</h3>
-          <p class="case-card__body">${escapeHtml(d.summary)}</p>
-          <div class="case-card__outcome">Outcome: ${escapeHtml(d.outcome)}</div>
-        </article>`
-      )
-      .join('');
-  }
-
-  renderCards('all');
-
-  filterBtns.forEach((btn) => {
-    btn.addEventListener('click', () => {
-      filterBtns.forEach((b) => b.setAttribute('aria-selected', 'false'));
-      btn.setAttribute('aria-selected', 'true');
-      renderCards(btn.dataset.filter);
-    });
-  });
-}
-
-/* 8. Contact Form Validation & PostgreSQL Persistence */
+/* Contact Form */
 function initContactForm() {
   const form = document.getElementById('partnership-form');
   const feedback = document.getElementById('form-feedback');
@@ -533,7 +408,6 @@ function initContactForm() {
 
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
-
     const name = form.name.value.trim();
     const email = form.email.value.trim();
     const organization = form.organization.value.trim();
@@ -541,14 +415,7 @@ function initContactForm() {
     const message = form.message.value.trim();
 
     if (!name || !email || !organization || !message) {
-      feedback.textContent = 'Please complete all required fields before submitting your inquiry.';
-      feedback.classList.add('is-visible');
-      return;
-    }
-
-    const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-    if (!emailValid) {
-      feedback.textContent = 'Please enter a valid work email address.';
+      feedback.textContent = 'Please complete all required fields.';
       feedback.classList.add('is-visible');
       return;
     }
@@ -559,25 +426,23 @@ function initContactForm() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name, email, organization, division, message }),
       });
-
       if (res.ok) {
         const saved = await res.json();
-        feedback.textContent = `Thank you, ${name}. Inquiry #${saved.id} (${division}) for ${organization} has been saved to PostgreSQL. Our engineering team will respond to ${email} within one business day.`;
+        feedback.textContent = `Thank you, ${name}. Inquiry #${saved.id} (${division}) saved.`;
         feedback.classList.add('is-visible');
         form.reset();
         return;
       }
     } catch {
-      // Fallback
+      // ignore
     }
-
-    feedback.textContent = `Thank you, ${name}. Your ${division} inquiry for ${organization} has been logged.`;
+    feedback.textContent = `Thank you, ${name}. Inquiry logged.`;
     feedback.classList.add('is-visible');
     form.reset();
   });
 }
 
-/* 9. Bright Daylight Topographic & Field Station Canvas */
+/* Daylight Topographic Canvas */
 function initHeroTelemetryCanvas() {
   const canvas = document.getElementById('hero-telemetry-canvas');
   if (!canvas) return;
@@ -600,53 +465,35 @@ function initHeroTelemetryCanvas() {
   }
 
   function draw() {
-    // Warm daylight mineral paper background
     ctx.fillStyle = '#F4F2EA';
     ctx.fillRect(0, 0, width, height);
 
-    // Subtle botanical warmth gradient
-    const grad = ctx.createRadialGradient(width * 0.65, height * 0.35, 10, width * 0.65, height * 0.35, width * 0.75);
-    grad.addColorStop(0, 'rgba(31, 74, 56, 0.12)');
-    grad.addColorStop(0.55, 'rgba(181, 103, 52, 0.08)');
-    grad.addColorStop(1, 'rgba(244, 242, 234, 0)');
-    ctx.fillStyle = grad;
-    ctx.fillRect(0, 0, width, height);
-
-    // Topographic elevation contour lines
-    const layers = 14;
+    const layers = 12;
     for (let i = 0; i < layers; i++) {
       const baseY = (height / (layers + 1)) * (i + 1.1);
       ctx.beginPath();
-      for (let x = 0; x <= width; x += 12) {
-        const wave1 = Math.sin(x * 0.008 + phase + i * 0.45) * 18;
-        const wave2 = Math.cos(x * 0.015 - phase * 0.6 + i * 0.3) * 10;
-        const y = baseY + wave1 + wave2;
+      for (let x = 0; x <= width; x += 14) {
+        const y = baseY + Math.sin(x * 0.008 + phase + i * 0.45) * 16 + Math.cos(x * 0.015 - phase * 0.6 + i * 0.3) * 9;
         if (x === 0) ctx.moveTo(x, y);
         else ctx.lineTo(x, y);
       }
-
-      if (i === 5 || i === 10) {
-        ctx.strokeStyle = 'rgba(181, 103, 52, 0.65)';
-        ctx.lineWidth = 1.5;
-      } else {
-        ctx.strokeStyle = `rgba(31, 74, 56, ${0.18 + (i % 3) * 0.08})`;
-        ctx.lineWidth = 1.1;
-      }
+      ctx.strokeStyle = i === 5 || i === 9 ? 'rgba(181, 103, 52, 0.6)' : 'rgba(31, 74, 56, 0.22)';
+      ctx.lineWidth = i === 5 || i === 9 ? 1.4 : 1;
       ctx.stroke();
     }
 
-    // Human-operated field station markers
     const nodes = [
-      { x: width * 0.28, y: height * 0.36, label: 'AG-01 · Estate' },
-      { x: width * 0.64, y: height * 0.28, label: 'MN-04 · Pit' },
-      { x: width * 0.52, y: height * 0.62, label: 'BIO-02 · Lab' },
+      { x: width * 0.26, y: height * 0.34, label: 'farmSense' },
+      { x: width * 0.66, y: height * 0.28, label: 'Vmines' },
+      { x: width * 0.34, y: height * 0.66, label: 'techx' },
+      { x: width * 0.68, y: height * 0.62, label: 'Biotx' },
     ];
 
     nodes.forEach((node, idx) => {
-      const pulse = prefersReduced ? 12 : 12 + Math.sin(phase * 2 + idx) * 4;
+      const pulse = prefersReduced ? 11 : 11 + Math.sin(phase * 2 + idx) * 3.5;
       ctx.beginPath();
       ctx.arc(node.x, node.y, pulse, 0, Math.PI * 2);
-      ctx.strokeStyle = idx === 1 ? 'rgba(181, 103, 52, 0.5)' : 'rgba(31, 74, 56, 0.45)';
+      ctx.strokeStyle = idx === 1 ? 'rgba(181, 103, 52, 0.45)' : 'rgba(31, 74, 56, 0.4)';
       ctx.lineWidth = 1.2;
       ctx.stroke();
 
@@ -657,7 +504,7 @@ function initHeroTelemetryCanvas() {
 
       ctx.font = '600 11px "IBM Plex Mono", monospace';
       ctx.fillStyle = '#181C19';
-      ctx.fillText(node.label, node.x + 12, node.y + 4);
+      ctx.fillText(node.label, node.x + 11, node.y + 4);
     });
 
     if (!prefersReduced) {
