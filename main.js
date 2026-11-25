@@ -11,11 +11,10 @@ let allTelemetry = [];
 
 document.addEventListener('DOMContentLoaded', () => {
   initHeaderScroll();
-  initMobileNav();
+  initContactModal();
   initUnifiedPlatformHub();
   initFarmerHub();
   initContactForm();
-  initHeroTelemetryCanvas();
 });
 
 function initHeaderScroll() {
@@ -26,30 +25,25 @@ function initHeaderScroll() {
   onScroll();
 }
 
-function initMobileNav() {
-  const toggleBtn = document.getElementById('nav-toggle-btn');
-  const nav = document.getElementById('primary-nav');
-  if (!toggleBtn || !nav) return;
+function initContactModal() {
+  const modal = document.getElementById('contact-modal');
+  const openBtn = document.getElementById('open-contact-btn');
+  const closeBtn = document.getElementById('close-contact-btn');
+  if (!modal || !openBtn || !closeBtn) return;
 
-  toggleBtn.addEventListener('click', () => {
-    const isOpen = nav.classList.toggle('is-open');
-    toggleBtn.setAttribute('aria-expanded', String(isOpen));
-  });
-
-  nav.querySelectorAll('a').forEach((link) => {
-    link.addEventListener('click', () => {
-      nav.classList.remove('is-open');
-      toggleBtn.setAttribute('aria-expanded', 'false');
-    });
+  openBtn.addEventListener('click', () => modal.showModal());
+  closeBtn.addEventListener('click', () => modal.close());
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) modal.close();
   });
 }
 
-/* Unified Minimalist 4-Platform Hub: farmSense, Vmines, techx, Biotx */
+/* Unified Minimalist 4-Platform Hub: farmSense, Vmines, Biotx, techx */
 async function initUnifiedPlatformHub() {
-  const tabs = document.querySelectorAll('#platforms .tab-btn');
-  const jumpLinks = document.querySelectorAll('[data-jump]');
+  const tabs = document.querySelectorAll('.platform-btn');
   const panel = document.getElementById('explorer-panel');
   const farmSenseHub = document.getElementById('farmsense-hub');
+  const appBadges = document.getElementById('farmsense-app-badges');
   const pingBtn = document.getElementById('ping-telemetry-btn');
   if (!tabs.length || !panel) return;
 
@@ -128,9 +122,9 @@ async function initUnifiedPlatformHub() {
     currentPlatform = slug;
     tabs.forEach((t) => t.setAttribute('aria-selected', String(t.dataset.division === slug)));
 
-    if (farmSenseHub) {
-      farmSenseHub.style.display = slug === 'agriculture' ? 'block' : 'none';
-    }
+    const isFarmSense = slug === 'agriculture';
+    if (farmSenseHub) farmSenseHub.style.display = isFarmSense ? 'block' : 'none';
+    if (appBadges) appBadges.style.display = isFarmSense ? 'flex' : 'none';
 
     const data = divisions[slug];
     if (data) {
@@ -158,10 +152,6 @@ async function initUnifiedPlatformHub() {
 
   tabs.forEach((tab) => {
     tab.addEventListener('click', () => selectPlatform(tab.dataset.division));
-  });
-
-  jumpLinks.forEach((link) => {
-    link.addEventListener('click', () => selectPlatform(link.dataset.jump));
   });
 
   pingBtn?.addEventListener('click', async () => {
