@@ -1,19 +1,16 @@
 /* ==========================================================================
-   TX Limited — Minimalist Unified Platform Logic (PostgreSQL-Backed)
-   Platforms: farmSense (AgriTech) · Vmines (Mining) · techx (AI&ML) · Biotx (Biotech)
+   TX — Elegant Landing Page Logic (farmSense · Vmines · techx · Biotx)
    ========================================================================== */
 
 const API_BASE = 'http://localhost:3001/api';
 
-let currentPlatform = 'agriculture';
-let allDeployments = [];
-let allTelemetry = [];
-
 document.addEventListener('DOMContentLoaded', () => {
   initHeaderScroll();
-  initContactModal();
-  initUnifiedPlatformHub();
+  initMobileNav();
+  initHeroTelemetryCanvas();
   initFarmerHub();
+  initSectorPreviews();
+  initReviews();
   initContactForm();
 });
 
@@ -25,159 +22,132 @@ function initHeaderScroll() {
   onScroll();
 }
 
-function initContactModal() {
-  const modal = document.getElementById('contact-modal');
-  const openBtn = document.getElementById('open-contact-btn');
-  const closeBtn = document.getElementById('close-contact-btn');
-  if (!modal || !openBtn || !closeBtn) return;
+function initMobileNav() {
+  const toggleBtn = document.getElementById('nav-toggle-btn');
+  const nav = document.getElementById('primary-nav');
+  if (!toggleBtn || !nav) return;
 
-  openBtn.addEventListener('click', () => modal.showModal());
-  closeBtn.addEventListener('click', () => modal.close());
-  modal.addEventListener('click', (e) => {
-    if (e.target === modal) modal.close();
+  toggleBtn.addEventListener('click', () => {
+    const isOpen = nav.classList.toggle('is-open');
+    toggleBtn.setAttribute('aria-expanded', String(isOpen));
+  });
+
+  nav.querySelectorAll('a').forEach((link) => {
+    link.addEventListener('click', () => {
+      nav.classList.remove('is-open');
+      toggleBtn.setAttribute('aria-expanded', 'false');
+    });
   });
 }
 
-/* Unified Minimalist 4-Platform Hub: farmSense, Vmines, Biotx, techx */
-async function initUnifiedPlatformHub() {
-  const tabs = document.querySelectorAll('.platform-btn');
-  const panel = document.getElementById('explorer-panel');
-  const farmSenseHub = document.getElementById('farmsense-hub');
-  const appBadges = document.getElementById('farmsense-app-badges');
-  const pingBtn = document.getElementById('ping-telemetry-btn');
-  if (!tabs.length || !panel) return;
+/* Interactive Previews for Vmines, techx, and Biotx */
+function initSectorPreviews() {
+  const vminesData = {
+    xrf: { v1: '94.2%', s1: 'Ore-grade classification', v2: '-29%', s2: 'Milling energy saved' },
+    radar: { v1: '0.4 mm', s1: 'Pit-wall radar sensitivity', v2: '24/7', s2: 'Geotechnical monitoring' },
+    fleet: { v1: '-38%', s1: 'Haulage & reagent waste', v2: '99.4%', s2: 'Dispatch uptime' },
+  };
+  document.querySelectorAll('[data-vmines]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('[data-vmines]').forEach((b) => b.setAttribute('aria-selected', 'false'));
+      btn.setAttribute('aria-selected', 'true');
+      const d = vminesData[btn.dataset.vmines];
+      document.getElementById('vm-m1-val').textContent = d.v1;
+      document.getElementById('vm-m1-sub').textContent = d.s1;
+      document.getElementById('vm-m2-val').textContent = d.v2;
+      document.getElementById('vm-m2-sub').textContent = d.s2;
+    });
+  });
 
-  let divisions = {};
-  try {
-    const [divRes, depRes, telRes] = await Promise.all([
-      fetch(`${API_BASE}/divisions`),
-      fetch(`${API_BASE}/deployments`),
-      fetch(`${API_BASE}/telemetry`),
-    ]);
-    if (divRes.ok) divisions = await divRes.json();
-    if (depRes.ok) allDeployments = (await depRes.json()).deployments || [];
-    if (telRes.ok) allTelemetry = (await telRes.json()).logs || [];
-  } catch {
-    // API offline
-  }
+  const techxData = {
+    vision: { v1: '8 ms', s1: 'On-device TensorRT', v2: '99.1%', s2: 'Verified field precision' },
+    anomaly: { v1: '0 kbps', s1: 'Air-gapped inference', v2: '4.8 TB', s2: 'Daily telemetry processed' },
+    grading: { v1: '3.4x', s1: 'Faster cooperative payout', v2: '98.7%', s2: 'Moisture & kernel accuracy' },
+  };
+  document.querySelectorAll('[data-techx]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('[data-techx]').forEach((b) => b.setAttribute('aria-selected', 'false'));
+      btn.setAttribute('aria-selected', 'true');
+      const d = techxData[btn.dataset.techx];
+      document.getElementById('tx-m1-val').textContent = d.v1;
+      document.getElementById('tx-m1-sub').textContent = d.s1;
+      document.getElementById('tx-m2-val').textContent = d.v2;
+      document.getElementById('tx-m2-sub').textContent = d.s2;
+    });
+  });
 
-  const eyebrowEl = document.getElementById('exp-eyebrow');
-  const titleEl = document.getElementById('exp-title');
-  const descEl = document.getElementById('exp-desc');
-  const listEl = document.getElementById('exp-list');
-  const sysNameEl = document.getElementById('exp-sys-name');
-  const sysStatusEl = document.getElementById('exp-sys-status');
-  const kpisEl = document.getElementById('exp-kpis');
-  const stackEl = document.getElementById('exp-stack');
+  const biotxData = {
+    soil: { v1: '45,000 / wk', s1: 'Microfluidic assays', v2: '-41% Urea', s2: 'Verified estate trials' },
+    leach: { v1: '88%', s1: 'Heavy-metal detox rate', v2: '4.2x', s2: 'Faster strain optimization' },
+  };
+  document.querySelectorAll('[data-biotx]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('[data-biotx]').forEach((b) => b.setAttribute('aria-selected', 'false'));
+      btn.setAttribute('aria-selected', 'true');
+      const d = biotxData[btn.dataset.biotx];
+      document.getElementById('bx-m1-val').textContent = d.v1;
+      document.getElementById('bx-m1-sub').textContent = d.s1;
+      document.getElementById('bx-m2-val').textContent = d.v2;
+      document.getElementById('bx-m2-sub').textContent = d.s2;
+    });
+  });
+}
 
-  function renderTelemetry(slug) {
-    const feedEl = document.getElementById('live-telemetry-feed');
-    const labelEl = document.getElementById('active-telemetry-label');
-    if (!feedEl) return;
+/* User Reviews Section */
+function initReviews() {
+  const reviews = [
+    {
+      platform: 'farmSense',
+      author: 'Ibrahim Musa',
+      role: 'Commercial Maize Grower · Kano',
+      quote: 'Walking our 14.8 ha boundary on the farmSense app took ten minutes. The rain alerts and NDVI stress warnings saved our second planting.',
+    },
+    {
+      platform: 'Vmines',
+      author: 'Eng. Chidi Okafor',
+      role: 'Chief Mine Geologist',
+      quote: 'Vmines conveyor XRF sorting cut our waste-rock milling volume by nearly a third while giving our pit team live slope radar visibility.',
+    },
+    {
+      platform: 'techx',
+      author: 'Dr. Grace Adeyemi',
+      role: 'Cooperative Operations Lead',
+      quote: 'techx runs completely offline at our rural collection hubs. Grain grading now takes seconds with transparent visual evidence.',
+    },
+    {
+      platform: 'Biotx',
+      author: 'Dr. Samuel Kofi',
+      role: 'Agronomy & Soil Director',
+      quote: 'Pairing Biotx rhizosphere inoculants with farmSense dosing maps reduced our synthetic urea spend by 41% across three seasons.',
+    },
+  ];
 
-    const brandMap = { agriculture: 'farmSense', mining: 'Vmines', aiml: 'techx', biotech: 'Biotx' };
-    if (labelEl) labelEl.textContent = `${brandMap[slug] || 'TX'} Live Telemetry`;
+  const grid = document.getElementById('reviews-grid');
+  const filterBtns = document.querySelectorAll('[data-rev]');
+  if (!grid) return;
 
-    const filtered = allTelemetry.filter((t) => t.division === slug);
-    const items = (filtered.length ? filtered : allTelemetry).slice(0, 4);
-
-    if (!items.length) {
-      feedEl.innerHTML = '<span class="telemetry-pill">No readings yet</span>';
-      return;
-    }
-
-    feedEl.innerHTML = items
+  function render(filter) {
+    const list = filter === 'all' ? reviews : reviews.filter((r) => r.platform === filter);
+    grid.innerHTML = list
       .map(
-        (l) => `
-        <span class="telemetry-pill">
-          <span class="telemetry-pill__node">${escapeHtml(l.node_id)}</span>
-          <span>${escapeHtml(l.metric_name)}:</span>
-          <strong>${escapeHtml(l.metric_value)}</strong>
-        </span>`
-      )
-      .join('');
-  }
-
-  function renderDeployments(slug) {
-    const grid = document.getElementById('deployments-grid');
-    if (!grid) return;
-
-    const filtered = allDeployments.filter((d) => d.division_slug === slug);
-    const items = filtered.length ? filtered : allDeployments.slice(0, 2);
-
-    grid.innerHTML = items
-      .map(
-        (d) => `
+        (r) => `
         <article class="case-card">
-          <span class="case-card__sector">${escapeHtml(d.sector)}</span>
-          <h3 class="case-card__title">${escapeHtml(d.title)}</h3>
-          <p class="case-card__body">${escapeHtml(d.summary)}</p>
-          <div class="case-card__outcome">Outcome: ${escapeHtml(d.outcome)}</div>
+          <span class="case-card__sector">${escapeHtml(r.platform)}</span>
+          <p class="case-card__body" style="color: var(--ink-primary); font-size: 1rem;">&ldquo;${escapeHtml(r.quote)}&rdquo;</p>
+          <div class="case-card__outcome">${escapeHtml(r.author)} &middot; ${escapeHtml(r.role)}</div>
         </article>`
       )
       .join('');
   }
 
-  function selectPlatform(slug) {
-    currentPlatform = slug;
-    tabs.forEach((t) => t.setAttribute('aria-selected', String(t.dataset.division === slug)));
-
-    const isFarmSense = slug === 'agriculture';
-    if (farmSenseHub) farmSenseHub.style.display = isFarmSense ? 'block' : 'none';
-    if (appBadges) appBadges.style.display = isFarmSense ? 'flex' : 'none';
-
-    const data = divisions[slug];
-    if (data) {
-      eyebrowEl.textContent = data.leadRole ? `${data.eyebrow} · ${data.leadRole}` : data.eyebrow;
-      titleEl.textContent = data.title;
-      descEl.textContent = data.desc;
-      sysNameEl.textContent = data.sysName;
-      sysStatusEl.textContent = data.sysStatus;
-      listEl.innerHTML = data.bullets.map((b) => `<li>${escapeHtml(b)}</li>`).join('');
-      kpisEl.innerHTML = data.kpis
-        .map(
-          (k) => `
-          <div>
-            <div class="telemetry-kpi__num">${escapeHtml(k.num)}</div>
-            <div class="telemetry-kpi__desc">${escapeHtml(k.desc)}</div>
-          </div>`
-        )
-        .join('');
-      stackEl.innerHTML = data.stack.map((s) => `<span class="stack-chip">${escapeHtml(s)}</span>`).join('');
-    }
-
-    renderTelemetry(slug);
-    renderDeployments(slug);
-  }
-
-  tabs.forEach((tab) => {
-    tab.addEventListener('click', () => selectPlatform(tab.dataset.division));
+  render('all');
+  filterBtns.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      filterBtns.forEach((b) => b.setAttribute('aria-selected', 'false'));
+      btn.setAttribute('aria-selected', 'true');
+      render(btn.dataset.rev);
+    });
   });
-
-  pingBtn?.addEventListener('click', async () => {
-    pingBtn.textContent = 'Syncing...';
-    const samples = {
-      agriculture: { node_id: 'FS-04', division: 'agriculture', metric_name: 'SOIL_MOISTURE', metric_value: `${(36 + Math.random() * 8).toFixed(1)}%` },
-      mining: { node_id: 'VM-02', division: 'mining', metric_name: 'ORE_GRADE', metric_value: `${(92 + Math.random() * 4).toFixed(1)}%` },
-      aiml: { node_id: 'TX-07', division: 'aiml', metric_name: 'EDGE_LATENCY', metric_value: `${(6 + Math.random() * 3).toFixed(1)}ms` },
-      biotech: { node_id: 'BX-03', division: 'biotech', metric_name: 'CULTURE_PH', metric_value: `${(6.6 + Math.random() * 0.4).toFixed(2)}` },
-    };
-    try {
-      await fetch(`${API_BASE}/telemetry`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(samples[currentPlatform] || samples.agriculture),
-      });
-      const res = await fetch(`${API_BASE}/telemetry`);
-      if (res.ok) allTelemetry = (await res.json()).logs || [];
-    } catch {
-      // ignore
-    }
-    renderTelemetry(currentPlatform);
-    pingBtn.textContent = 'Sync Nodes';
-  });
-
-  selectPlatform('agriculture');
 }
 
 /* farmSense Interactive Hub (Walk-Around GPS + Live Weather & Crop Health) */
@@ -276,7 +246,7 @@ async function initFarmerHub() {
     const cx = canvas.width / 2 + (Math.random() * 40 - 20);
     const cy = canvas.height / 2 + (Math.random() * 20 - 10);
     const rx = 120 + Math.random() * 40;
-    const ry = 60 + Math.random() * 20;
+    const ry = 55 + Math.random() * 20;
     for (let i = 0; i < 5; i++) {
       const angle = (i / 5) * Math.PI * 2;
       const jitter = 0.85 + Math.random() * 0.3;
