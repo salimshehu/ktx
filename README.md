@@ -1,43 +1,27 @@
-# TX Limited — Company Website, Admin Console & PostgreSQL Backend
+# TX — Host-Isolated Web Platform & PostgreSQL API
 
-Human-centered engineering platform for **TX Limited** across four divisions:
-- **Precision Agriculture**
-- **Mining Tech Solutions**
-- **AI & Machine Learning**
-- **Biotech Technology**
+Your tech solution for every sector across **farmSense**, **Vmines**, **techx**, and **Biotx**.
 
-## Stack
-- **Frontend**: Vanilla HTML5, CSS3 (`index.css`), and ES6+ JavaScript (`main.js`, `admin.js`)
-- **Backend**: Node.js (`>=22`) HTTP API (`backend/server.js`)
-- **Database**: PostgreSQL (`pg` driver, `backend/db.js`)
+## Architecture
+- **Unified Host-Routed Server** (`backend/server.js`, default `PORT=8080`):
+  - **Public Root (`PUBLIC_DOMAIN=localhost`)**: Serves the public landing page and public APIs (`/api/divisions`, `/api/farms`, `/api/inquiries`). Strictly returns `404 Not Found` for `/admin*` and `/api/admin*`.
+  - **Admin Subdomain (`ADMIN_DOMAIN=admin.localhost`)**: Opens directly to the Admin Console/Login, blocks public landing pages (`index.html`), enforces host-only `HttpOnly; SameSite=Strict` cookies, restricts CORS/CSRF to `ADMIN_DOMAIN`, and sends `X-Robots-Tag: noindex, nofollow` on every response.
+- **Database**: PostgreSQL (`pg`, `backend/db.js`)
 
-## Run Locally on Your Machine
+## Run Locally
 
-### 1. Prerequisites
-- **Node.js 20+** (`node -v`)
-- **PostgreSQL 14+** running locally (`psql --version`)
-- **Python 3** (or any static file server like `npx serve`) for the frontend
-
-### 2. Create the PostgreSQL Database
-```bash
-psql -U postgres -c "CREATE USER tx_user WITH PASSWORD 'tx_pass';"
-psql -U postgres -c "CREATE DATABASE tx_limited OWNER tx_user;"
-psql -U postgres -c "GRANT ALL PRIVILEGES ON DATABASE tx_limited TO tx_user;"
-```
-*(Or set `DATABASE_URL` in your environment to point to any PostgreSQL instance.)*
-
-### 3. Install Dependencies & Start the Backend
-```bash
-npm install
-npm start
-```
-The API server starts at `http://localhost:3001` and automatically creates and seeds the `divisions`, `deployments`, `telemetry_logs`, and `inquiries` tables.
-
-### 4. Start the Frontend
-In a second terminal:
-```bash
-python3 -m http.server 8080
-```
-Then open in your local browser:
-- **Company Website**: `http://localhost:8080/index.html`
-- **Admin Console**: `http://localhost:8080/admin.html`
+1. Copy `.env.example` to `.env` (or export variables).
+2. Create the PostgreSQL database:
+   ```bash
+   psql -U postgres -c "CREATE USER tx_user WITH PASSWORD 'tx_pass';"
+   psql -U postgres -c "CREATE DATABASE tx_limited OWNER tx_user;"
+   psql -U postgres -c "GRANT ALL PRIVILEGES ON DATABASE tx_limited TO tx_user;"
+   ```
+3. Install dependencies and start the unified server:
+   ```bash
+   npm install
+   npm start
+   ```
+4. Open in your browser:
+   - **Public Website**: `http://localhost:8080`
+   - **Admin Console**: `http://admin.localhost:8080` (default login: `admin` / `tx_admin_pass`)

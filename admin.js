@@ -1,34 +1,112 @@
-const API_BASE = 'http://localhost:3001/api';
+const API_BASE = '/api/admin';
 
 let cachedInquiries = [];
 
-document.addEventListener('DOMContentLoaded', () => {
-  loadDashboard();
+document.addEventListener('DOMContentLoaded', async () => {
+  await loadPublicConfig();
+  await checkSession();
 
+  document.getElementById('admin-login-box')?.addEventListener('submit', handleLogin);
+  document.getElementById('logout-btn')?.addEventListener('click', handleLogout);
   document.getElementById('refresh-admin-btn')?.addEventListener('click', loadDashboard);
   document.getElementById('filter-division')?.addEventListener('change', renderInquiries);
   document.getElementById('telemetry-form')?.addEventListener('submit', handleTelemetrySubmit);
 });
 
+async function loadPublicConfig() {
+  try {
+    const res = await fetch(`${API_BASE}/config`);
+    if (res.ok) {
+      const cfg = await res.json();
+      const link = document.getElementById('back-to-site-btn');
+      if (link && cfg.publicUrl) link.href = cfg.publicUrl;
+    }
+  } catch {
+    // ignore
+  }
+}
+
+async function checkSession() {
+  try {
+    const res = await fetch(`${API_BASE}/session`, { credentials: 'same-origin' });
+    if (res.ok) {
+      showDashboard();
+      await loadDashboard();
+      return;
+    }
+  } catch {
+    // ignore
+  }
+  showLogin();
+}
+
+function showLogin() {
+  document.getElementById('admin-login-box').style.display = 'grid';
+  document.getElementById('admin-dashboard').style.display = 'none';
+  document.getElementById('logout-btn').style.display = 'none';
+  document.getElementById('refresh-admin-btn').style.display = 'none';
+}
+
+function showDashboard() {
+  document.getElementById('admin-login-box').style.display = 'none';
+  document.getElementById('admin-dashboard').style.display = 'block';
+  document.getElementById('logout-btn').style.display = 'inline-flex';
+  document.getElementById('refresh-admin-btn').style.display = 'inline-flex';
+}
+
+async function handleLogin(e) {
+  e.preventDefault();
+  const username = document.getElementById('login-username').value.trim();
+  const password = document.getElementById('login-password').value;
+  const feedback = document.getElementById('login-feedback');
+
+  const res = await fetch(`${API_BASE}/login`, {
+    method: 'POST',
+    credentials: 'same-origin',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ username, password }),
+  });
+
+  if (res.ok) {
+    feedback.classList.remove('is-visible');
+    showDashboard();
+    await loadDashboard();
+  } else {
+    feedback.textContent = 'Invalid admin credentials.';
+    feedback.classList.add('is-visible');
+  }
+}
+
+async function handleLogout() {
+  await fetch(`${API_BASE}/logout`, { method: 'POST', credentials: 'same-origin' });
+  showLogin();
+}
+
 async function loadDashboard() {
   try {
+    const opts = { credentials: 'same-origin' };
     const [healthRes, divRes, inqRes, telRes, farmsRes] = await Promise.all([
-      fetch(`${API_BASE}/health`),
-      fetch(`${API_BASE}/divisions`),
-      fetch(`${API_BASE}/inquiries`),
-      fetch(`${API_BASE}/telemetry`),
-      fetch(`${API_BASE}/farms`),
+      fetch(`${API_BASE}/health`, opts),
+      fetch(`${API_BASE}/divisions`, opts),
+      fetch(`${API_BASE}/inquiries`, opts),
+      fetch(`${API_BASE}/telemetry`, opts),
+      fetch(`${API_BASE}/farms`, opts),
     ]);
 
+    if (healthRes.status === 401) {
+      showLogin();
+      return;
+    }
+
     const health = await healthRes.json();
-    const divisions = await divRes.json();
+    const divData = await divRes.json();
     const inqData = await inqRes.json();
     const telData = await telRes.json();
     const farmsData = await farmsRes.json();
 
     document.getElementById('admin-pg-badge').textContent = `${health.engine.toUpperCase()} // ${health.database}`;
     document.getElementById('stat-engine').textContent = 'PostgreSQL 16';
-    document.getElementById('stat-divisions').textContent = Object.keys(divisions).length;
+    document.getElementById('stat-divisions').textContent = (divData.divisions || []).length;
 
     cachedInquiries = inqData.inquiries || [];
     document.getElementById('stat-inquiries').textContent = cachedInquiries.length;
@@ -38,9 +116,8 @@ async function loadDashboard() {
     document.getElementById('stat-telemetry').textContent = logs.length;
     renderTelemetry(logs);
 
-    const farms = farmsData.farms || [];
-    renderFarms(farms);
-  } catch (err) {
+    renderFarms(farmsData.farms || []);
+  } catch {
     document.getElementById('admin-pg-badge').textContent = 'API Offline';
   }
 }
@@ -75,10 +152,7 @@ function renderInquiries() {
   const filter = document.getElementById('filter-division')?.value || 'ALL';
   if (!tbody) return;
 
-  const filtered =
-    filter === 'ALL'
-      ? cachedInquiries
-      : cachedInquiries.filter((item) => item.division === filter);
+  const filtered = filter === 'ALL' ? cachedInquiries : cachedInquiries.filter((item) => item.division === filter);
 
   if (!filtered.length) {
     tbody.innerHTML = '<tr><td colspan="5">No inquiries found for this filter.</td></tr>';
@@ -97,9 +171,7 @@ function renderInquiries() {
         </td>
         <td><span class="badge-tag">${escapeHtml(row.division)}</span></td>
         <td>${escapeHtml(row.message)}</td>
-        <td>
-          <button class="btn-sm" type="button" onclick="deleteInquiry(${row.id})">Resolve</button>
-        </td>
+        <td><button class="btn-sm" type="button" onclick="deleteInquiry(${row.id})">Resolve</button></td>
       </tr>`
     )
     .join('');
@@ -132,6 +204,7 @@ async function handleTelemetrySubmit(e) {
 
   const res = await fetch(`${API_BASE}/telemetry`, {
     method: 'POST',
+    credentials: 'same-origin',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ node_id, division, metric_name, metric_value }),
   });
@@ -143,10 +216,8 @@ async function handleTelemetrySubmit(e) {
 }
 
 window.deleteInquiry = async function deleteInquiry(id) {
-  const res = await fetch(`${API_BASE}/inquiries/${id}`, { method: 'DELETE' });
-  if (res.ok) {
-    await loadDashboard();
-  }
+  const res = await fetch(`${API_BASE}/inquiries/${id}`, { method: 'DELETE', credentials: 'same-origin' });
+  if (res.ok) await loadDashboard();
 };
 
 function escapeHtml(str) {
